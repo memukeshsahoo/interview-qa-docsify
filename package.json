@@ -1,0 +1,14 @@
+{
+  "name": "interview-qa-docsify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack interview questions and answers (C#, .NET, Angular, JavaScript) served with Docsify.",
+  "scripts": {
+    "start": "docsify serve docs --port 3000 --open",
+    "serve": "docsify serve docs --port 3000",
+    "init-docsify": "docsify init ./docs"
+  },
+  "devDependencies": {
+    "docsify-cli": "^4.4.4"
+  }
+}
