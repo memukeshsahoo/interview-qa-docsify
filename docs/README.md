@@ -28,6 +28,14 @@ Answers are written in plain English, the way you would say them in an interview
    - [.NET](dotnet/situational.md)
    - [JavaScript](javascript/situational.md)
    - [Full-stack](fullstack/situational.md)
+9. **.NET deep dives**
+   - [REST API optimization](dotnet/rest-api-optimization.md)
+   - [Refresh token + “is JWT still stateless?”](dotnet/refresh-token.md)
+   - [SignalR (previous project)](dotnet/signalr.md)
+10. **Output-based**
+    - [C#](csharp/output-based.md)
+    - [JavaScript](javascript/output-based.md)
+11. [Programming / coding](programming/coding.md)
 
 ---
 
