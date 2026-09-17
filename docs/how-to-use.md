@@ -60,3 +60,14 @@ Interviewers almost always ask one more thing:
 - “Is there a performance cost?”
 
 Practice those, not only the first answer.
+
+---
+
+## Situational pages
+
+Those pages add two extra blocks:
+
+- **Example** — a small code snippet you can talk through
+- **Real-world example** — how it showed up in a product (list, header, login, dashboard)
+
+Start with [Angular situational](angular/situational.md) if they ask how two screens talk when they are not parent and child.

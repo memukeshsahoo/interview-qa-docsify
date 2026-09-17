@@ -22,6 +22,12 @@ Answers are written in plain English, the way you would say them in an interview
 5. [JavaScript Basic](javascript/01-basic.md) → [Advanced](javascript/03-advanced.md)
 6. [Angular Basic](angular/01-basic.md) → [Advanced](angular/03-advanced.md)
 7. [Full-stack mix](fullstack/mixed.md)
+8. **Situational (code + real product story)**
+   - [Angular](angular/situational.md) — including two unrelated components A and B
+   - [C#](csharp/situational.md)
+   - [.NET](dotnet/situational.md)
+   - [JavaScript](javascript/situational.md)
+   - [Full-stack](fullstack/situational.md)
 
 ---
 
