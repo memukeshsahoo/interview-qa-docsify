@@ -257,3 +257,71 @@ A tester changed `tenantId` in DevTools and saw another org’s list until the A
 **Cross-answer:**
 
 A **server** endpoint “act as tenant X” after a permission check, then a new token or server-side session. Not a free field on every DTO.
+
+---
+
+## Q11. Wallet shows 500, booking says insufficient for 400. How do you debug?
+
+**Answer:**
+
+The card is **available** balance: `Balance - active holds`. The table column `Balance` is gross. If 1000 sits in Balance and 600 is held, available is 400. Check `HoldBalances` for Active rows on that wallet, including expiry. Then confirm the UI bound `available` vs `balance`.
+
+**Example:**
+
+```csharp
+Balance = result.WalletBalance - result.HoldAmount
+```
+
+**Real-world example:**
+
+NriCare `GetWalletBalanceAsync` returns that subtracted number. The transactions page also returns `TotalHoldAmountCount`. A “wrong wallet” bug is often a hold the UI did not show.
+
+**Cross-question:** Expired hold still blocking book?
+
+**Cross-answer:**
+
+It can. Booking create sums all Active holds and ignores `ExpiresAt`. The balance API skips expired ones. That mismatch is a real debug story.
+
+---
+
+## Q12. Angular got 401 while the user was on the booking chat. What should happen?
+
+**Answer:**
+
+Access JWT is ~20 minutes. Chat hub also used `access_token` on the socket. Interceptor should refresh once, retry REST, and reconnect SignalR with the new token. If refresh fails, keep the typed message in memory and send them to login.
+
+**Example:**
+
+`POST /api/Auth/refresh-token` with the refresh string. Old refresh row is revoked. New pair comes back.
+
+**Real-world example:**
+
+NriCare refresh rotates in a transaction. If two tabs refresh the same token, the second should fail because the first revoked it. That is rotation. The user must log in again on the losing tab.
+
+**Cross-question:** Put refresh token on the SignalR URL?
+
+**Cross-answer:**
+
+No. Only the short access token, and do not log the full hub URL.
+
+---
+
+## Q13. Service provider marks complete on mobile. Association dashboard should show money moved. It does not. Where do you look?
+
+**Answer:**
+
+Network: did `change-status` return success? Then `ReleasePayment` — holds Released, user Balance down, SP/platform/MA ledgers created. Association filter: MA user should see their wallet, SuperAdmin sees all. If FCM failed, the screen just did not refresh — pull-to-refresh should still load the new ledger from GET wallet.
+
+**Example:**
+
+Complete with no verifier → `Completed` + `ReleasePayment`. With verifier → `UnderReview` and **no** payout yet.
+
+**Real-world example:**
+
+That verifier branch surprises people. Money moves later when verification is approved. Reject uses the refund path (`ReleaseHold`).
+
+**Cross-question:** Count the payout in Angular from the old booking object?
+
+**Cross-answer:**
+
+No. Reload wallet from the API. The in-memory booking DTO does not contain the split.

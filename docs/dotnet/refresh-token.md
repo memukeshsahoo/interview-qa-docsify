@@ -208,3 +208,62 @@ User clicked “log out all sessions” after a shared kiosk. We revoked refresh
 **Cross-answer:**
 
 Stolen access token works for 8 hours with no revoke story. Short access + refresh is the usual compromise.
+
+---
+
+## Q6. How did you implement refresh tokens in NriCare? Be honest.
+
+**Answer:**
+
+Login is phone + BCrypt password. We return a JWT (~20 minutes) and a refresh token: 64 random bytes, Base64, stored **as the raw string** in `RefreshTokens`, default about 1 hour. Refresh loads that row, checks `IsActive`, starts a transaction, sets `RevokedAt` on the old row, inserts a new refresh with the same `SessionId`, and issues a new JWT.
+
+**Example:**
+
+```csharp
+var refreshToken = await _dbContext.RefreshTokens
+    .Include(rt => rt.User)
+    .FirstOrDefaultAsync(rt => rt.Token == token);
+
+if (refreshToken == null || !refreshToken.IsActive)
+    return null;
+
+refreshToken.RevokedAt = DateTime.UtcNow;
+var newRefresh = await GenerateRefreshToken(refreshToken.UserId, ipAddress, refreshToken.SessionId!);
+```
+
+**Real-world example:**
+
+`AuthService.RefreshTokenAsync` does rotation. Logout only stamps `UserLoginActivity.LogoutTimeUtc`. It does **not** revoke refresh rows, so I would also revoke by `SessionId` on logout.
+
+**Cross-question:** Do you hash the refresh token?
+
+**Cross-answer:**
+
+Not in the current table. I would hash it (SHA-256) and store `TokenHash`, like I described in Q2. If the DB leaks, raw tokens should not work.
+
+---
+
+## Q7. After login, how does the rest of the API know the user?
+
+**Answer:**
+
+The access JWT is still stateless. Each `/api` call: Bearer middleware validates signature and expiry, then `SessionMiddleware` fills `IUserSession` from claims. Repositories never look up the refresh row on a normal GET.
+
+**Example:**
+
+```csharp
+user.UserId = userId;
+user.UserAccessType = parsedAccessType;
+if (parsedAccessType == UserAccessType.SuperAdmin)
+    user.DisableMainAssociationFilter = true;
+```
+
+**Real-world example:**
+
+That is why a SuperAdmin can see all associations and an NR user cannot. The filter reads the same scoped session.
+
+**Cross-question:** `SaveToken = true` on JWT bearer?
+
+**Cross-answer:**
+
+It stores the token on `HttpContext` so SignalR or later middleware can read it. It is **not** a server-side session table for every API call.

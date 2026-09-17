@@ -321,3 +321,120 @@ Authorization: Bearer ...
 **Cross-question:** PUT vs PATCH for status?
 
 **Cross-answer:** PATCH `{ "status": "Closed" }` if we only change status. PUT if we replace the whole resource.
+
+---
+
+## Q13. Write available wallet balance (C#)
+
+**Answer:**
+
+Available = gross balance minus active, non-expired holds. Speak it while you type. Do not mutate Balance here.
+
+**Example:**
+
+```csharp
+static decimal Available(decimal balance, IEnumerable<Hold> holds, DateTime utcNow)
+{
+    var held = holds
+        .Where(h => h.Status == HoldStatus.Active
+                    && (h.ExpiresAt == null || h.ExpiresAt > utcNow))
+        .Sum(h => h.Amount);
+    return balance - held;
+}
+```
+
+**Real-world example:**
+
+This is `GetWalletBalanceAsync` in NriCare. Booking create uses a stricter version: all Active holds, no expiry skip.
+
+**Cross-question:** Negative available?
+
+**Cross-answer:**
+
+Treat as 0 for display. For booking, fail if `available < required`.
+
+---
+
+## Q14. Group ledger rows into credit vs debit totals
+
+**Answer:**
+
+One pass with `GroupBy`, or two sums. In an interview, one loop or LINQ is enough.
+
+**Example:**
+
+```csharp
+var totals = txns.GroupBy(t => t.FlowType)
+    .Select(g => new { Flow = g.Key, Count = g.Count(), Sum = g.Sum(x => x.Amount) })
+    .ToList();
+```
+
+**Real-world example:**
+
+Wallet history in NriCare computes incoming/outgoing counts and sums with separate queries. Interviewers like one `GroupBy` instead of four round trips.
+
+**Cross-question:** Do this in SQL?
+
+**Cross-answer:**
+
+Yes if `txns` is `IQueryable`. If you `ToList` first, grouping is in memory.
+
+---
+
+## Q15. Make “release payment” safe to retry (small design)
+
+**Answer:**
+
+Client or server sends a key `release_{bookingId}`. Unique store. If it exists, return the first result. If not, run the split in one transaction.
+
+**Example:**
+
+```csharp
+if (await db.WalletTransactions.AnyAsync(x => x.IdempotencyKey == key, ct))
+    return "Already released";
+
+await using var tx = await db.Database.BeginTransactionAsync(ct);
+// debit user, credit SP / platform / association
+await db.SaveChangesAsync(ct);
+await tx.CommitAsync(ct);
+```
+
+**Real-world example:**
+
+`BookingRepository.ReleasePayment` already uses keys like `release_{bookingId}` and `release_sp_{bookingId}`. Next step: unique index.
+
+**Cross-question:** GET vs POST for release?
+
+**Cross-answer:**
+
+POST. It changes money. GET should not.
+
+---
+
+## Q16. LINQ: bookings UnderDiscussion for this NR user, last 10
+
+**Answer:**
+
+Filter by user, status, order, take, project. Async. No tracking.
+
+**Example:**
+
+```csharp
+var rows = await db.Bookings
+    .AsNoTracking()
+    .Where(b => b.NRUserId == nrUserId && b.Status == BookingStatus.UnderDiscussion)
+    .OrderByDescending(b => b.CreatedDate)
+    .Take(10)
+    .Select(b => new { b.Id, b.BookingNumber, b.Price, b.Status })
+    .ToListAsync(ct);
+```
+
+**Real-world example:**
+
+Same shape as an NR user home list in NriCare. Status is an enum, not a magic string.
+
+**Cross-question:** `ToList` then `Where` status?
+
+**Cross-answer:**
+
+Loads every booking for that user. Keep `Where` on `IQueryable`.

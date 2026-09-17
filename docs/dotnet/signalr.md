@@ -207,3 +207,31 @@ No. Create/update still go through REST (validation, status codes, ProblemDetail
 **Cross-answer:**
 
 Live UI is easy to demo and easy to leak across tenants if you use `Clients.All`. Groups + small DTOs + REST for writes is the safe shape.
+
+---
+
+## Q8. How does SignalR work in NriCare (current project)?
+
+**Answer:**
+
+Hub is `ChatHub` at `/chat/hub`. JWT can arrive as `?access_token=` because browsers cannot set the header on WebSockets. On connect I put the connection in a group named with `user_id`. `SendMessage` saves the row, then `ReceiveMessage` goes to **participant groups**, not `Clients.All`. Chat can also carry a quotation id. Push for offline users is a new DI scope in `Task.Run`.
+
+**Example:**
+
+```csharp
+app.MapHub<ChatHub>("/chat/hub").RequireCors("SignalRCors");
+
+// JWT events
+if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chat/hub"))
+    context.Token = accessToken;
+```
+
+**Real-world example:**
+
+NR user and service provider chat about a booking. Quotation messages use `ContentType.Quotation`. Presence (`UserOnline` / `UserOffline`) currently broadcasts `Clients.All`. I would restrict that. Connection map is in-memory, so it is per server.
+
+**Cross-question:** Is `[Authorize]` on the hub?
+
+**Cross-answer:**
+
+The hub is not marked `[Authorize]`. It throws `HubException("Unauthorized")` if `user_id` is missing. I would add `[Authorize]` so unauthenticated sockets never enter `OnConnectedAsync`.

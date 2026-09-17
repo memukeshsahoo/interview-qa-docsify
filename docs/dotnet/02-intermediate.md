@@ -365,3 +365,115 @@ Stop one client flooding the API. ASP.NET has middleware for this. Pair it with 
 **Cross-answer:**
 
 Too many requests. Retry later. Clients should back off.
+
+---
+
+## Q27. How does soft delete work in NriCare?
+
+**Answer:**
+
+Entities implement `IBaseEntity` with `IsDeleted`. In `SaveChanges`, a hard delete is turned into a modify: `IsDeleted = true`. A global query filter hides those rows. Audit fields `CreatedBy` and `UpdatedBy` come from `IUserSession`.
+
+**Cross-question:** How do you still load a deleted wallet?
+
+**Cross-answer:**
+
+`IgnoreQueryFilters()` plus `!x.IsDeleted` when I really mean “include filtered types but still skip deleted”. Booking payout uses that for wallets across associations.
+
+---
+
+## Q28. How do you stop one association seeing another association’s data?
+
+**Answer:**
+
+Not a separate database. Entities like Booking, NRUser, ServiceProvider implement `IMainAssociationEntity`. The global filter is `MainAssociationId == current association`. SuperAdmin sets `DisableMainAssociationFilter`. On insert, SaveChanges stamps the association id from the session.
+
+**Cross-question:** Can the Angular app send `MainAssociationId` and switch tenant?
+
+**Cross-answer:**
+
+It should not win. The server session is the source. SuperAdmin is the only role that turns the filter off.
+
+---
+
+## Q29. JWT claims in NriCare — what is inside?
+
+**Answer:**
+
+Custom claims, not ASP.NET Identity roles: `user_id`, `session_id`, `user_access_type`, plus ids for service provider, association, NR user, and verifier. Access token life is about 20 minutes. `ClockSkew` is zero, so expiry is strict.
+
+**Cross-question:** `[Authorize(Roles = "Admin")]`?
+
+**Cross-answer:**
+
+We do not use that. `[Authorize]` on the controller, then code checks `UserAccessType`. I would add policies if the role matrix grew.
+
+---
+
+## Q30. How do you paginate lists?
+
+**Answer:**
+
+An extension `ApplyPaginationAsync` on `IQueryable`. Search, date, skip/take stay on the query so EF turns them into SQL. Wallet transactions and bookings use this. I do not `ToList` the whole table then page in memory.
+
+**Cross-question:** Why `CreatedDate.Date` in some queries?
+
+**Cross-answer:**
+
+It is easy to read and can block an index because of the `.Date` conversion. For hot paths I would compare to a UTC start/end instead.
+
+---
+
+## Q31. How do you map entities to DTOs?
+
+**Answer:**
+
+Most list APIs use LINQ `Select` into a DTO so EF projects in SQL. Mapster is registered, but we barely use it. I prefer `Select` for lists so we do not load full graphs.
+
+**Cross-question:** Returning the Booking entity?
+
+**Cross-answer:**
+
+No. It has fee breakdown, holds, chat, histories. That is a huge JSON and can loop. DTO only.
+
+---
+
+## Q32. File uploads — where do files go?
+
+**Answer:**
+
+DigitalOcean Spaces through the AWS S3 SDK. `FileUploadHelper` stores public or private objects. Images can get a thumbnail. Private files use a short presigned URL. The `File` row in Postgres is the metadata.
+
+**Cross-question:** If S3 succeeds and the DB insert fails?
+
+**Cross-answer:**
+
+You can get an orphan object in Spaces. I log that. A cleanup job or delete-on-failure would be the improvement.
+
+---
+
+## Q33. How does OTP work in your signup?
+
+**Answer:**
+
+Anonymous endpoints: request, verify, resend. We store a 6-digit code in `OtpVerification` with a 5-minute expiry. Login itself is phone + password, not OTP. OTP is for signup verification.
+
+**Cross-question:** How is the SMS sent?
+
+**Cross-answer:**
+
+A real SMS provider is not wired yet. The verify API currently returns the OTP in the message for testing. I would not ship that. Production needs SMS/email and no OTP in the response.
+
+---
+
+## Q34. Why is almost every repository scoped?
+
+**Answer:**
+
+They need `DbContext` and `IUserSession`, which are per request. If I put `BookingRepository` in a singleton, it would capture one context and one user for the whole app.
+
+**Cross-question:** Background job then?
+
+**Cross-answer:**
+
+TickerQ jobs create a **new scope**, resolve `ApplicationDbContext` from that scope, then dispose it. Same rule as Hangfire.

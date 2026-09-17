@@ -14,7 +14,7 @@ You can fill in the blanks. Keep it short.
 
 > I am a full-stack developer. I work with C#, ASP.NET Core, and Angular. In my day job I build APIs and screens — login, lists, dashboards, that kind of work.
 >
-> Lately I have worked on incident-style products: a dashboard, filters, background jobs, and a database per customer. Before that I built business apps with forms, reports, and Angular plus .NET.
+> Right now I work on NriCare, a care-service product. NR users book service providers through a main association. I have worked on the ASP.NET Core API: JWT login, wallets and holds, bookings and quotations, Razorpay top-up, SignalR chat, and TickerQ background jobs. The UI is Angular. The database is PostgreSQL with EF Core.
 >
 > I like taking a feature from the API all the way to the UI. I also like writing code that the next person can read. I am looking for a role where I can go deeper on the backend and still stay close to Angular.
 
@@ -22,7 +22,7 @@ You can fill in the blanks. Keep it short.
 
 **Cross-answer:**
 
-> I built the incident dashboard. List, filters, and a few count cards. The API had to return totals without showing another customer’s data. The hard part was not the chart. The hard part was login checks, keeping tenants apart, and making the query fast with EF Core.
+> I built the booking and wallet flow. When an NR user books, we lock the wallet, hold the amount, and open a chat with the provider. The hard part was not the screen. The hard part was not double-spending, splitting payment on complete, and keeping one association from seeing another’s rows.
 
 ---
 
@@ -32,7 +32,7 @@ You can fill in the blanks. Keep it short.
 
 Pick three points, newest first. Skip school unless they ask.
 
-> I will keep this to recent work. Right now I am a full-stack engineer on .NET APIs and Angular. I owned feature X — for example the incident dashboard — API, database queries, and the screen. Before that I worked on Y, where I learned Z, like auth or background jobs.
+> I will keep this to recent work. Right now I am a full-stack engineer on NriCare — .NET APIs and Angular. I owned pieces of booking, wallet holds, and chat: API, EF queries, and the screens that call them. Before that I built business apps with the same stack, including auth and background jobs.
 
 **Cross-question:** Why are you looking / why did you leave?
 
@@ -114,13 +114,13 @@ Use a story: situation, what you did, result.
 
 **Answer:**
 
-> After login, users saw an empty list. The screen was fine. The API returned 200 with no rows. The tenant id on the token was wrong after a refresh. I logged the tenant id (not the token), added a test that user A cannot see tenant B, and shipped a fix. After that, if tenant context is missing, we fail closed. We do not return “all rows”.
+> After login, an association user saw an empty booking list. The screen was fine. The API returned 200 with no rows. The JWT had no `main_association_id`, so the global filter did not match any rows. I logged the association id (not the token), fixed the claim on login, and made SuperAdmin the only role that turns the filter off. Missing association on a normal user means empty or 403, never “all rows”.
 
 **Cross-question:** How did you stop it happening again?
 
 **Cross-answer:**
 
-> A test for cross-tenant access, and a rule: no tenant means 401 or 403, never a full dump.
+> A check that association A cannot read association B’s booking id, and a rule: SuperAdmin can disable the filter, nobody else.
 
 ---
 
@@ -166,7 +166,7 @@ Always yes. Try three:
 
 **Cross-answer:**
 
-> Each customer’s data lives in its own box. User from company A should never see company B, even if they guess an id.
+> Each main association’s data is filtered on the server. A user from association A should never see association B, even if they guess a booking id. SuperAdmin is the exception, on purpose.
 
 ---
 
@@ -176,13 +176,13 @@ Always yes. Try three:
 
 Pick one story with a result.
 
-> I am proud of the incident dashboard. Users used to export Excel to count tickets. We gave them live numbers, with the right permissions. Support calls about “wrong counts” went down because we counted in one place on the server.
+> I am proud of the wallet hold on booking. Users used to worry money would leave the wallet before the job was done. We hold the amount, chat and quotation can still change, and we only split payment when the work is completed. Support calls about “I was charged twice” went down because release uses an idempotency key.
 
 **Cross-question:** What would you do differently?
 
 **Cross-answer:**
 
-> I would agree the meaning of each number with the business first. “Open” meant different things to two teams. The code was fine. The definition was not.
+> I would agree “available balance” with the product first. Gross `Balance` vs `Balance minus holds` confused people. The code was doing both in different screens. One definition would have saved support time.
 
 ---
 

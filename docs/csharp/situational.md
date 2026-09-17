@@ -224,6 +224,8 @@ public class WeatherClient(HttpClient http)
 
 A job called a SMS API 50,000 times with `new HttpClient()`. Outbound HTTP died until recycle. Factory fixed it.
 
+In NriCare, `MailHelper` still does `new HttpClient()` per ZeptoMail send. Same smell. I would inject `IHttpClientFactory`.
+
 **Cross-question:** Static singleton HttpClient?
 
 **Cross-answer:**
@@ -285,3 +287,28 @@ Parent ticket id `0` was sent as “no parent”. A real id never 0 until an imp
 **Cross-answer:**
 
 Be consistent. User input: `IsNullOrWhiteSpace`. Database: null for unknown, empty only if empty is a real value.
+
+---
+
+## Q11. Booking numbers use a static `ConcurrentDictionary` plus `SemaphoreSlim`. Two API servers. What goes wrong?
+
+**Answer:**
+
+The counter lives in process memory. Server A and server B each think the next number is 0001. You get duplicate `BK-2026-...-0001` or you skip numbers when one node restarts. A database sequence, or `MAX` inside a transaction, is the safe version.
+
+**Example:**
+
+```csharp
+private static readonly SemaphoreSlim _sequenceSemaphore = new(1, 1);
+private static readonly ConcurrentDictionary<string, int> _dailySequenceCounter = new();
+```
+
+**Real-world example:**
+
+NriCare `GenerateBookingNumber` works on one instance. Wallet `GenerateTransactionId` uses `Count() + 1` with no lock — two top-ups can get the same TXN id. I would use a unique constraint plus retry, or a sequence.
+
+**Cross-question:** Is `SemaphoreSlim` useless then?
+
+**Cross-answer:**
+
+It still serializes threads **on that machine**. It does not replace a database uniqueness rule.

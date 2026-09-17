@@ -359,3 +359,45 @@ Wrong API URL in environment.prod. Hash routing vs server rewrite. Base href. Mi
 **Cross-answer:**
 
 Browser console and the failed network request. Then `environment.prod` and the server’s fallback to `index.html`.
+
+---
+
+## Q26. Walk me through NriCare login from the Angular button.
+
+**Answer:**
+
+User types phone and password. Angular posts `POST /api/Auth/login`. API finds the user, checks BCrypt, writes `UserLoginActivity`, returns JWT + refresh token, plus flags like `isApprovedUser` and `hasActiveSubscription`. Angular stores the access token and sends `Authorization: Bearer` on later calls. Session claims drive the association filter. OTP is a separate signup flow, not this login.
+
+**Cross-question:** Password in the log?
+
+**Cross-answer:**
+
+We log phone number on login, not the password. Never log the JWT or refresh token.
+
+---
+
+## Q27. NR user books a service from the app. What hits the API?
+
+**Answer:**
+
+Web/app booking POST with service provider, service type, dates. Server checks the user is an NR user, prices from `ServiceProviderServices`, adds tax / association / platform / verifier fees, locks the wallet, creates a hold, opens a chat, returns the booking number. Angular then shows Under Discussion and the chat thread.
+
+**Cross-question:** Is the provider paid at that moment?
+
+**Cross-answer:**
+
+No. Only a hold. Payout is `ReleasePayment` when the job is completed (or after verifier approval).
+
+---
+
+## Q28. How do web and mobile share the same backend?
+
+**Answer:**
+
+One ASP.NET API. Web routes `api/...`, mobile `api/app/...`, common `api/Auth`, OTP, files. Two Swagger docs. Same JWT, same database. Angular admin/web is `NriCare.Web.UI`. That is why a booking created on mobile still shows in the web association dashboard, as long as the association filter allows it.
+
+**Cross-question:** Different tokens per client?
+
+**Cross-answer:**
+
+Same token shape. `session_id` is per login, not per “web vs app”. Logout should revoke that session’s refresh token — today logout only records logout time.

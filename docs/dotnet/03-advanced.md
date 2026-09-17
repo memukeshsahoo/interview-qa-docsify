@@ -361,3 +361,101 @@ Two users, two tenants. User A’s token must not read B’s id. Automated test.
 **Cross-answer:**
 
 No. Someone will forget on the next feature. Tests stay.
+
+---
+
+## Q26. Walk me through booking money in NriCare.
+
+**Answer:**
+
+When an NR user books, we start a database transaction. We lock the wallet with Postgres `FOR UPDATE`. Available money is `Balance` minus active holds. If it is enough, we insert a `HoldBalance` and a Hold ledger row. We do **not** subtract `Balance` yet. The money is reserved. When the job is completed, `ReleasePayment` debits the user and splits to the service provider, platform, association, and verifier.
+
+**Cross-question:** Why not debit immediately?
+
+**Cross-answer:**
+
+The booking can still be cancelled while it is under discussion. A hold keeps the amount aside without paying the provider yet.
+
+---
+
+## Q27. Two booking requests at the same time for one wallet. What happens?
+
+**Answer:**
+
+On create booking we `SELECT ... FOR UPDATE` that wallet row, so the second request waits. After the first hold is saved, the second sees a smaller available balance and fails with insufficient funds. That is pessimistic locking.
+
+**Cross-question:** Does quotation accept use the same lock?
+
+**Cross-answer:**
+
+Not today. Accept quotation checks available balance without `FOR UPDATE`. Two accepts could race. I would reuse the same lock, or a unique idempotency index.
+
+---
+
+## Q28. What would you change in production logging?
+
+**Answer:**
+
+Serilog request logging is good: method, path, status, time. I would turn **off** `EnableSensitiveDataLogging` and `EnableDetailedErrors` outside Development. Those print SQL parameter values, which can include phones and amounts. Session middleware logging every user id at Information is noisy in production; Warning is enough.
+
+**Cross-question:** Log the JWT on 401?
+
+**Cross-answer:**
+
+Never. Log user id and path. Tokens and passwords stay out.
+
+---
+
+## Q29. How do you split payment on booking complete?
+
+**Answer:**
+
+`ReleasePayment` runs in a transaction. User wallet `Balance` goes down by the hold total. Service provider gets total minus platform, association, and verifier fees. SuperAdmin wallet gets platform fee. Association and verifier wallets get their fees if present. Holds become Released. Each split has its own ledger row and key.
+
+**Cross-question:** What if SaveChanges fails in the middle?
+
+**Cross-answer:**
+
+The explicit transaction rolls back, so no half payout. After commit we queue PDF report jobs. Those can fail without undoing money, which is acceptable as “eventually generate the receipt”.
+
+---
+
+## Q30. How do subscriptions debit the wallet safely?
+
+**Answer:**
+
+In `ProcessSubscriptionInternal` we use `ExecuteUpdateAsync`: update the payer wallet only if `Balance >= total`. If zero rows updated, we fail. Then we write ledger rows, the subscription, and the payment log in the same transaction.
+
+**Cross-question:** Why `ExecuteUpdate` instead of load-and-save?
+
+**Cross-answer:**
+
+Load-and-save can overwrite a concurrent top-up. The SQL `WHERE Balance >= amount` is one atomic decrement. No rowversion on Wallet, so this pattern matters.
+
+---
+
+## Q31. How would you improve Razorpay verify?
+
+**Answer:**
+
+Today `verify` captures the payment, then credits the wallet in a second step, and it picks the latest payment log with no Razorpay payment id — not filtered by user. If capture works and wallet credit fails, retry can credit twice. I would: match the log by order id, unique constraint on payment id, credit inside a transaction, and add a webhook as the source of truth.
+
+**Cross-question:** Why manual capture?
+
+**Cross-answer:**
+
+Orders are created with `payment_capture = 0`. We capture only after the client calls verify. That is fine if verify is honest. A webhook is safer when the app dies after capture.
+
+---
+
+## Q32. TickerQ vs Hangfire — what do you actually use?
+
+**Answer:**
+
+TickerQ. Job methods have `[TickerFunction]`. We enqueue with `ITimeTickerManager`. The store is EF tables on the same Postgres. Max concurrency is 4. Dashboard is `/tickerq`. Jobs create their own DI scope so they do not reuse a request DbContext.
+
+**Cross-question:** What if the API restarts?
+
+**Cross-answer:**
+
+Missed tickers can be cancelled on restart (`CancelMissedTickersOnApplicationRestart`). Document expiry currently schedules **another** daily job on every startup, so I would make that schedule idempotent.

@@ -176,6 +176,8 @@ Work that keeps running inside the app: a queue reader, a timer. `ExecuteAsync` 
 
 Hosted: simple, dies with the app. Hangfire: saved jobs, retries, dashboard. Separate Worker: own process, own scale.
 
+In NriCare I do not use Hangfire. Background work is **TickerQ**, stored in the same Postgres database, with a dashboard at `/tickerq`.
+
 ---
 
 ## Q13. Status codes you actually use?
@@ -184,7 +186,7 @@ Hosted: simple, dies with the app. Hangfire: saved jobs, retries, dashboard. Sep
 
 200 ok, 201 created, 204 no content, 400 bad input, 401 not logged in, 403 logged in but not allowed, 404, 409 conflict, 500 server error.
 
-**Cross-question:** User is logged in but tries another tenant’s incident?
+**Cross-question:** User is logged in but tries another association’s booking?
 
 **Cross-answer:**
 
@@ -357,3 +359,101 @@ I prefer testing the handler/service with a fake repository. For the HTTP surfac
 **Cross-answer:**
 
 If the action is fat, yes it gets messy. That is a sign to move logic out of the controller.
+
+---
+
+## Q26. How is the NriCare API structured?
+
+**Answer:**
+
+It is not full Clean Architecture. Two main .NET projects: `NriCare.Api` for HTTP, middleware, and jobs, and `NriCare.Domain` for entities, EF, repositories, and DTOs. There is also `NriCare.Fcm` for push notifications. Controllers stay thin. Most business logic lives in repositories like `BookingRepository` and `WalletRepository`.
+
+**Cross-question:** Why not a separate Application layer?
+
+**Cross-answer:**
+
+It grew as a product API. Repositories act like application services. If I started again I would split use-cases out, but I would not fake a four-layer diagram for what we have.
+
+---
+
+## Q27. Why do you have Web, App, and Common controllers?
+
+**Answer:**
+
+Two clients. Angular web uses `api/...` with Swagger group `web`. The mobile app uses `api/app/...` with group `app`. Shared things like login, OTP, and file upload sit in Common and show up in both Swagger docs.
+
+**Cross-question:** Same booking on both?
+
+**Cross-answer:**
+
+Yes, but different actions. Web books as the NR user. App is mostly the service provider: list, status change, complete.
+
+---
+
+## Q28. How do you get the current user in a repository?
+
+**Answer:**
+
+JWT is validated first. Then `SessionMiddleware` copies claims into a scoped `IUserSession`: user id, access type, association id, service provider id, and so on. Repositories inject `IUserSession`. I do not trust a user id from the JSON body for “who am I”.
+
+**Cross-question:** Why middleware, not reading claims in every method?
+
+**Cross-answer:**
+
+One place. `ApplicationDbContext` also uses the same session for CreatedBy and the association filter.
+
+---
+
+## Q29. What is `ApiResponse` in your APIs?
+
+**Answer:**
+
+A common envelope: `isSuccess`, `statusCode`, `message`, `errors`, and `data`. Controllers use helpers like `OkResponse` and `BadRequestResponse`. Validation failures return **422**, not only 400.
+
+**Cross-question:** Why 422?
+
+**Cross-answer:**
+
+400 is a bad request. 422 means the JSON parsed, but the model is invalid. Angular can show field errors from `errors`.
+
+---
+
+## Q30. What database and ORM do you use?
+
+**Answer:**
+
+PostgreSQL with EF Core and Npgsql. One shared database, not one database per customer. Soft delete and association filters sit on `ApplicationDbContext`.
+
+**Cross-question:** Why Postgres?
+
+**Cross-answer:**
+
+It is what the project uses. Features we actually use: transactions, `FOR UPDATE` on wallet rows, and UTC timestamps.
+
+---
+
+## Q31. How is DI registered in NriCare?
+
+**Answer:**
+
+`Program.cs` stays the host. Repositories and helpers are registered in `ServiceRegistration()`. Almost everything is **scoped**. `IAmazonS3` for DigitalOcean Spaces is a **singleton**. SignalR connection tracking is also a singleton.
+
+**Cross-question:** Why is S3 a singleton?
+
+**Cross-answer:**
+
+The AWS client is thread-safe and expensive to create. A new client per request is waste. DbContext stays scoped.
+
+---
+
+## Q32. How do you handle unhandled exceptions?
+
+**Answer:**
+
+`ExceptionHandlingMiddleware` wraps the pipeline, logs the error, and returns a 500 `ApiResponse`. I would not send `exception.Message` to the client in production. Right now the middleware does include the message, which I would change to a generic text and keep the detail in logs.
+
+**Cross-question:** Does it cover SignalR?
+
+**Cross-answer:**
+
+No. Hub errors are `HubException` on the socket. HTTP middleware does not wrap that.

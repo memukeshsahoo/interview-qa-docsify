@@ -292,3 +292,294 @@ Two agents typed a resolution. The slower save wiped the first note. RowVersion 
 **Cross-answer:**
 
 OK for “last seen at”. Not for money, status, or comments.
+
+---
+
+## Q11. The same user double-clicks Book. Both requests should not hold the full wallet. How do you handle it?
+
+**Answer:**
+
+Same wallet, two HTTP requests. I lock the wallet row with `FOR UPDATE` inside a transaction, compute `Balance - active holds`, then insert the hold. The second waiter sees the first hold and gets “insufficient available balance”.
+
+**Example:**
+
+```csharp
+var wallet = await _context.Wallets
+    .FromSqlRaw(
+        "SELECT * FROM \"Wallets\" WHERE \"UserId\" = {0} AND NOT \"IsDeleted\" FOR UPDATE",
+        userId)
+    .FirstOrDefaultAsync();
+
+var activeHolds = await _context.HoldBalances
+    .Where(h => h.WalletId == wallet.Id && h.Status == HoldStatus.Active)
+    .SumAsync(h => (decimal?)h.Amount) ?? 0m;
+
+if (wallet.Balance - activeHolds < totalAmount)
+    return ApiResponse.BadRequest("Insufficient available balance.");
+```
+
+**Real-world example:**
+
+NriCare booking create does this. Available is not `Wallet.Balance` alone. Holds sit in `HoldBalances` with status Active.
+
+**Cross-question:** In-memory lock instead?
+
+**Cross-answer:**
+
+`SemaphoreSlim` only works on one server. Two API instances would both pass. Database lock is the right place.
+
+---
+
+## Q12. Payment is captured at Razorpay, then the API crashes before wallet credit. What is the user state?
+
+**Answer:**
+
+Razorpay has the money. `RazorPayPaymentLog` may still be pending. Wallet is not credited. There is no webhook to finish the job. If the user taps verify again, capture may say “already captured”, but `AddMoneyAsync` can run again and double credit. I would store Razorpay payment id uniquely and credit only once.
+
+**Example:**
+
+```csharp
+// risky: latest log with no payment id, any user
+var log = await _context.RazorPayPaymentLogs
+    .Where(x => x.RazorpayPaymentId == null)
+    .OrderByDescending(x => x.Id)
+    .FirstOrDefaultAsync();
+```
+
+**Real-world example:**
+
+`PaymentController` verify captures, then separately calls `AddMoneyAsync`. Those are not one transaction with Razorpay.
+
+**Cross-question:** Outbox?
+
+**Cross-answer:**
+
+After capture, write “credit wallet” in the same DB as the log, then a job credits. Or a Razorpay webhook that is idempotent on `pay_...`.
+
+---
+
+## Q13. Background email job runs twice. Does the user get two emails?
+
+**Answer:**
+
+Yes, it can. `EmailJob` always inserts a new `EmailLog` and sends. It swallows exceptions, so TickerQ may **not** retry on failure — but a duplicate enqueue will send twice. Document expiry also schedules a new daily ticker on every app start.
+
+**Example:**
+
+```csharp
+[TickerFunction("SendEmail")]
+public async Task SendEmail(TickerFunctionContext<AddEmailLogRequestDto> trequest)
+{
+    try
+    {
+        var mailId = await _mailRepository.AddEmailLogs(trequest.Request);
+        await _mailHelper.SentEMail(mailId);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Failed to send email to {Recipient}", recipient);
+        // swallowed — TickerQ will not retry
+    }
+}
+```
+
+**Real-world example:**
+
+NriCare emails go ZeptoMail through this job. I would rethrow after logging if I want retries, and skip send if a log for that receipt already succeeded.
+
+**Cross-question:** Review-request job?
+
+**Cross-answer:**
+
+That one is safer. `CreateReviewRequestAsync` returns early if a request already exists. Retries are ok.
+
+---
+
+## Q14. Booking completed, then `ReleasePayment` is called twice. What happens?
+
+**Answer:**
+
+We look for ledger `IdempotencyKey == "release_{bookingId}"`. If found, we return success without paying again. The second call is a no-op **if** the first already committed.
+
+**Example:**
+
+```csharp
+var idempotencyKey = $"release_{bookingId}";
+if (await _context.WalletTransactions.AnyAsync(x => x.IdempotencyKey == idempotencyKey))
+    return ApiResponse<string>.Success("Already released");
+```
+
+**Real-world example:**
+
+Complete booking and verifier-approved both call `ReleasePayment`. The key is how we avoid paying the provider twice.
+
+**Cross-question:** Two requests in the same millisecond?
+
+**Cross-answer:**
+
+Both can pass the `AnyAsync` check. Unique index on the key is the missing piece.
+
+---
+
+## Q15. User accepts a quotation that needs extra money. Wallet is short. What do you return?
+
+**Answer:**
+
+Accept runs in `QuotationRepository.ChangeStatusAsync`. Available = balance minus active holds. If `payable` is greater than available, we return 400 with available vs required. Booking stays as it was. We do not accept and hope they recharge later.
+
+**Example:**
+
+```csharp
+if (availableBalance < payable)
+    return ApiResponse<string>.BadRequest(
+        $"Insufficient balance. Available: {availableBalance}, Required: {payable}");
+```
+
+**Real-world example:**
+
+NriCare extra quotation amount becomes another `HoldBalance` on the same booking, expiry 7 days, key `quotation_hold_{quotationId}_{nrUserId}`.
+
+**Cross-question:** Transaction around accept?
+
+**Cross-answer:**
+
+Not today. I would wrap hold + quotation status + booking Active in one `BeginTransactionAsync`.
+
+---
+
+## Q16. FCM is down. Should booking complete fail?
+
+**Answer:**
+
+No. Money and booking status are the source of truth. Push is extra. In booking/wallet code we `try/catch` around `INotificationService` and log. The HTTP call still succeeds. The user can see the in-app `Notification` row if that save worked.
+
+**Example:**
+
+```csharp
+try { await _notificationService.NotifyWalletCredit(userId, amount, txnId); }
+catch (Exception ex) {
+    _logger.LogError(ex, "Push notification failed for wallet top-up. UserId={UserId}", userId);
+}
+```
+
+**Real-world example:**
+
+`WalletRepository.AddMoneyAsync` already does this. Booking notification job also isolates DB insert vs FCM in two try blocks.
+
+**Cross-question:** Hide the failure forever?
+
+**Cross-answer:**
+
+Log it. A later retry on FCM is nice. Do not roll back a completed booking because Firebase blinked.
+
+---
+
+## Q17. How would you debug a slow wallet transaction list?
+
+**Answer:**
+
+Network TTFB first. Then SQL. That endpoint counts incoming, outgoing, sums, hold total, then paginates — several round trips. I would look at indexes on `FromWalletId` / `ToWalletId` / `CreatedDate`, and whether we need all those totals on every page request.
+
+**Example:**
+
+```csharp
+var incoming = await baseQuery.Where(...Credit...).CountAsync();
+var outgoing = await baseQuery.Where(...Debit...).CountAsync();
+// then SumAsync twice, then paginated Select
+```
+
+**Real-world example:**
+
+`GetWalletTransactionAsync` does this. Fine for a small ledger. Under load I would one grouped query or cache the totals for a few seconds per user.
+
+**Cross-question:** `Include` the wallets?
+
+**Cross-answer:**
+
+No. Project names in `Select`. `Include` pulls full graphs.
+
+---
+
+## Q18. SuperAdmin recharges a Main Association wallet. What must not happen?
+
+**Answer:**
+
+The association must be approved. Amount > 0. SuperAdmin wallet must cover it. We debit SA, credit MA, write a Transfer ledger, PDF receipt, email. Two concurrent recharges should not both pass on the same last rupee — today there is no `FOR UPDATE` on that path, so I would add the same atomic debit as subscriptions.
+
+**Example:**
+
+```csharp
+var rows = await _context.Wallets
+    .Where(w => w.Id == saWalletId && w.Balance >= amount)
+    .ExecuteUpdateAsync(s => s.SetProperty(w => w.Balance, w => w.Balance - amount));
+if (rows == 0) return BadRequest("Insufficient Super Admin balance");
+```
+
+**Real-world example:**
+
+`MainAssociationRepository.RechargeWalletAsync` is the admin recharge, not Razorpay. Modes like Bank Transfer / UPI are stored on the ledger.
+
+**Cross-question:** Unique transaction reference?
+
+**Cross-answer:**
+
+The field exists. A unique index would stop duplicate bank refs. I would add it.
+
+---
+
+## Q19. Chat message is saved, then the API node dies before FCM. Is the chat lost?
+
+**Answer:**
+
+The message is already in `ChatMessages`. SignalR already pushed to groups on that node. FCM is fire-and-forget `Task.Run` with a new scope. Offline users might miss the push, but they still load history from REST. I would not put FCM in the same transaction as the message.
+
+**Example:**
+
+```csharp
+await _chatRepository.SaveMessageAsync(...);
+await Clients.Groups(participantIds).ReceiveMessage(messageDto);
+_ = Task.Run(async () => {
+    using var scope = _scopeFactory.CreateScope();
+    var handler = scope.ServiceProvider.GetRequiredService<IChatNotificationHandler>();
+    await handler.HandleNewMessageAsync(...);
+});
+```
+
+**Real-world example:**
+
+NriCare `ChatHub.SendMessage` does exactly this. Online check uses in-memory connections, so a second server may still send FCM, which is ok.
+
+**Cross-question:** `Clients.All` for the message?
+
+**Cross-answer:**
+
+No. We send to participant user groups. `Clients.All` is only used for online/offline presence, which I would also scope down.
+
+---
+
+## Q20. Code review: `FileController` is `[AllowAnonymous]`. What do you say?
+
+**Answer:**
+
+Upload, get, and delete files without a token. Anyone who can hit the API can put objects in Spaces or delete by id. I would put `[Authorize]` back, check the user owns the file, and keep anonymous only for a true public asset if we ever need one.
+
+**Example:**
+
+```csharp
+[AllowAnonymous]
+public class FileController : BaseCommonController
+{
+    [HttpDelete("{id:long}")]
+    public async Task<IActionResult> DeleteFile(long id) { ... }
+}
+```
+
+**Real-world example:**
+
+This is the current NriCare common file API. I would treat it as a security fix, not a feature.
+
+**Cross-question:** Presigned download instead of public get?
+
+**Cross-answer:**
+
+Yes for private docs. Helper already builds presigned URLs (~50 minutes). The delete still must be authenticated.

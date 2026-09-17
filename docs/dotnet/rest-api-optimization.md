@@ -219,3 +219,38 @@ That exact pattern was the first PR I was asked to speed up on an incidents API.
 **Cross-answer:**
 
 I add a test that open-only rows return, then change the query.
+
+---
+
+## Q8. How would you speed up NriCare booking or wallet list APIs?
+
+**Answer:**
+
+Same checklist, applied to this app. Project a booking DTO (number, status, price, dates) — do not `Include` fee breakdown, status history, chat, and holds for a list. `AsNoTracking()`. Filter by `_userSession` (NR user or service provider) **in SQL**. Use `ApplyPaginationAsync`. For wallet, do not run four extra Count/Sum queries if the screen only needs the page of rows.
+
+**Example:**
+
+```csharp
+var rows = await _context.Bookings
+    .AsNoTracking()
+    .Where(b => b.NRUserId == nrUserId)
+    .OrderByDescending(b => b.CreatedDate)
+    .Select(b => new BookingListDto
+    {
+        Id = b.Id,
+        BookingNumber = b.BookingNumber,
+        Status = b.Status,
+        Price = b.Price
+    })
+    .ApplyPaginationAsync(request);
+```
+
+**Real-world example:**
+
+NriCare already paginates wallet transactions with a `Select` DTO. The extra totals on that same call are what I would measure first if the page felt slow.
+
+**Cross-question:** Cache the wallet balance?
+
+**Cross-answer:**
+
+Only with a short TTL and key `wallet-available:{userId}`. Invalidate on hold, release, and top-up. Wrong cache here is a money bug, so I would measure before caching.

@@ -297,3 +297,100 @@ catch (ArrayTypeMismatchException) { Console.Write("fail"); }
 **Cross-question:** `List<string>` to `List<object>`?
 
 **Cross-answer:** Does not compile. Generics are safer here.
+
+---
+
+## Q13. Available wallet balance (holds)
+
+```csharp
+decimal balance = 1000m;
+var holds = new[]
+{
+    (Amount: 200m, Active: true,  Expired: false),
+    (Amount: 100m, Active: true,  Expired: true),
+    (Amount: 50m,  Active: false, Expired: false),
+};
+
+var available = balance - holds
+    .Where(h => h.Active && !h.Expired)
+    .Sum(h => h.Amount);
+
+Console.WriteLine(available);
+```
+
+**Answer (output):** `800`
+
+Only the 200 hold is active and not expired. 100 is expired. 50 is not active.
+
+**Real-world example:**
+
+`GetWalletBalanceAsync` is `Balance` minus active holds that are not past `ExpiresAt`. Booking create currently counts **all** Active holds, even expired ones. Interviewers like that difference.
+
+**Cross-question:** If Balance was already reduced by the hold?
+
+**Cross-answer:**
+
+Then subtracting holds again would double-count. In NriCare, create-hold does **not** reduce `Balance`. Available must subtract holds.
+
+---
+
+## Q14. Deferred LINQ vs one ToList
+
+```csharp
+var n = 0;
+var q = new[] { 1, 2, 3 }.Where(x => { n++; return x > 1; });
+Console.WriteLine(n);
+Console.WriteLine(q.Count());
+Console.WriteLine(n);
+Console.WriteLine(q.Sum());
+Console.WriteLine(n);
+```
+
+**Answer (output):**
+
+```text
+0
+2
+2
+5
+4
+```
+
+`Where` does not run until `Count` / `Sum`. Each enumeration runs the predicate again. `Count` sees 2 and 3. `Sum` is 5. `n` becomes 2 then 4.
+
+**Real-world example:**
+
+If I pass an `IQueryable` of wallet rows to `CountAsync` and then `ToListAsync`, that is two SQL calls. Materialize once if I need both.
+
+**Cross-question:** `q.ToList()` first?
+
+**Cross-answer:**
+
+Then `n` would be 3 after ToList (all items visited once), and Count/Sum would be in memory.
+
+---
+
+## Q15. `async` + `Task.Run` around sync SDK
+
+```csharp
+async Task<int> CreateOrder()
+{
+    return await Task.Run(() => 42);
+}
+
+Console.WriteLine(CreateOrder().Result);
+```
+
+**Answer (output):** `42`
+
+It works, but you moved blocking work onto the thread pool. The method looks async. Under load those threads still get used.
+
+**Real-world example:**
+
+`RazorpayService.CreateOrderAsync` does `await Task.Run(() => _client.Order.Create(options))` because the Razorpay SDK call is sync. Honest answer: wrap it, but do not pretend it is non-blocking I/O.
+
+**Cross-question:** `.Result` on that in a controller?
+
+**Cross-answer:**
+
+Do not. `await CreateOrderAsync()` in the action. `.Result` can stall the thread pool.
