@@ -8,7 +8,7 @@ If these feel weak, the interview often stops here. Speak in plain words, then a
 
 **Answer:**
 
-C# is the **language** I write. .NET is the **engine and the libraries** — the runtime, lists, files, web, and so on. C# turns into IL. The CLR then turns IL into real machine code when it runs.
+C# is the **programming language** I write. .NET is the **platform** that provides the runtime and libraries I use for things like collections, files, networking, and web APIs. When I compile C# code, it is converted into **Intermediate Language (IL)**. When the application runs, the **Common Language Runtime (CLR)** uses the **Just-In-Time (JIT) compiler** to convert that IL into machine code that the computer can execute. So, simply: **C# is the language, and .NET is the platform that runs it and provides the libraries.**
 
 **Cross-question:** .NET Framework vs .NET Core vs just “.NET”?
 
