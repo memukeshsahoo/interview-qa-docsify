@@ -4,25 +4,40 @@
     <meta charset="UTF-8" />
     <title>Full-Stack Interview Q&amp;A</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-    <meta
-      name="description"
-      content="Interview questions from basic to advanced: tell me about yourself, C#, .NET, Angular, JavaScript — with cross-questions and answers."
-    />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
-    />
-    <link
-      rel="stylesheet"
-      href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css"
-    />
+    <meta name="description" content="Interview questions from basic to advanced: C#, .NET, Angular, JavaScript, and practical backend scenarios." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+
+    <link id="docsify-theme" rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css" />
+    <style>
+      #theme-toggle {
+        position: fixed;
+        top: 12px;
+        right: 18px;
+        z-index: 9999;
+        border: 1px solid rgba(127,127,127,.35);
+        border-radius: 8px;
+        padding: 7px 11px;
+        background: rgba(255,255,255,.92);
+        color: #333;
+        cursor: pointer;
+        font-size: 13px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      }
+      body.theme-dark #theme-toggle {
+        background: rgba(35,35,35,.95);
+        color: #eee;
+        border-color: #555;
+      }
+    </style>
   </head>
   <body>
     <div id="app">Loading interview notes…</div>
+    <button id="theme-toggle" type="button" aria-label="Switch theme">Dark mode</button>
+
     <script>
-      // Project Pages live at /interview-qa-docsify/; local Docsify uses /
       var pagesBase = '/interview-qa-docsify/';
       var onGitHubPages = /github\.io$/i.test(location.hostname);
+
       window.$docsify = {
         name: 'Interview Q&A',
         repo: '',
@@ -50,7 +65,32 @@
           crossChapterText: true
         }
       };
+
+      (function () {
+        var theme = localStorage.getItem('interview-theme') || 'light';
+        var themeLink = document.getElementById('docsify-theme');
+        var toggle = document.getElementById('theme-toggle');
+
+        function applyTheme(value) {
+          var dark = value === 'dark';
+          themeLink.href = dark
+            ? '//cdn.jsdelivr.net/npm/docsify@4/lib/themes/dark.css'
+            : '//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css';
+
+          document.body.classList.toggle('theme-dark', dark);
+          toggle.textContent = dark ? 'Light mode' : 'Dark mode';
+          localStorage.setItem('interview-theme', value);
+        }
+
+        toggle.addEventListener('click', function () {
+          applyTheme(theme === 'dark' ? 'light' : 'dark');
+          theme = theme === 'dark' ? 'light' : 'dark';
+        });
+
+        applyTheme(theme);
+      })();
     </script>
+
     <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
     <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
