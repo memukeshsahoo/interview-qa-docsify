@@ -235,3 +235,15 @@ NR user and service provider chat about a booking. Quotation messages use `Conte
 **Cross-answer:**
 
 The hub is not marked `[Authorize]`. It throws `HubException("Unauthorized")` if `user_id` is missing. I would add `[Authorize]` so unauthenticated sockets never enter `OnConnectedAsync`.
+
+
+---
+## Additional Questions
+### Q9. What is the difference between SignalR and REST?
+**Answer:** REST is request-response and is good for CRUD. SignalR is for server-to-client real-time events. In a normal app I use REST to change data and SignalR to notify connected clients.
+
+### Q10. How do you handle reconnects?
+**Answer:** I use automatic reconnect, show connection state in the UI, and make sure the client can resync missed data after reconnect. A socket is not a reliable database.
+
+### Q11. Why should SignalR messages be small?
+**Answer:** Large messages increase network and browser work. I usually send an id and changed fields, then let the client update or refetch the required record.
