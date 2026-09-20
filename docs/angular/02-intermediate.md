@@ -373,3 +373,13 @@ Third-party code ran outside Angular, UI did not update. `run` puts the work bac
 **Cross-answer:**
 
 For noisy events (mousemove) I do not want 60 change detections a second. I re-enter only when I must update the UI.
+
+
+---
+## Additional Questions
+### Q26. `switchMap`, `concatMap`, `mergeMap`, `exhaustMap` in one example?
+**Answer:** Search uses switchMap, ordered saves can use concatMap, independent parallel work can use mergeMap, and a login/submit button often uses exhaustMap to ignore duplicate clicks.
+### Q27. How do you handle multiple 401 responses?
+**Answer:** I share one refresh request. Other failed requests wait for it, then retry with the new token. If refresh fails, I clear auth and navigate to login.
+### Q28. How do you build a dynamic FormArray?
+**Answer:** I create a FormArray, push a FormGroup for each row, and remove the group by index when the user deletes a row. The API still validates every row.
