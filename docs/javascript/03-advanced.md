@@ -353,3 +353,13 @@ Not the average click, the slow 1%. Caused by GC pauses, huge lists, a cold cach
 **Cross-answer:**
 
 Virtual scroll, track by id, OnPush/signals, less work per row, fewer watchers. Profile first so I do not guess.
+
+
+---
+## Additional Questions
+### Q26. What is event delegation?
+**Answer:** Instead of adding a listener to every child, I listen on a parent and inspect the event target. It is useful for large dynamic lists.
+### Q27. What is a microtask?
+**Answer:** Promise callbacks and queueMicrotask run as microtasks. The event loop drains microtasks before moving to the next task, so a huge microtask chain can still block the UI.
+### Q28. Why can `JSON.stringify` be a poor deep-clone strategy?
+**Answer:** It loses things such as undefined, functions, Map and Set, and it changes some special values. For supported data, structuredClone is a better general tool.
