@@ -401,3 +401,13 @@ One ASP.NET API. Web routes `api/...`, mobile `api/app/...`, common `api/Auth`, 
 **Cross-answer:**
 
 Same token shape. `session_id` is per login, not per “web vs app”. Logout should revoke that session’s refresh token — today logout only records logout time.
+
+
+---
+## Additional Questions
+### Q29. How do you handle a file upload end to end?
+**Answer:** Angular sends FormData. The API checks authentication, authorization, size and type, stores the file in private/object storage, and returns a safe file id or URL. Downloads go through permission checks.
+### Q30. How do you keep frontend and backend contracts aligned?
+**Answer:** I define DTOs and API examples clearly, use generated clients or shared OpenAPI where practical, and test important contracts. A backend field rename should not silently break the Angular app.
+### Q31. How would you debug a slow full-stack page?
+**Answer:** Start with the browser Network waterfall. Then separate API time, SQL time, payload size and rendering time. I fix the biggest measured bottleneck first.
