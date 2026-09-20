@@ -254,3 +254,15 @@ NriCare already paginates wallet transactions with a `Select` DTO. The extra tot
 **Cross-answer:**
 
 Only with a short TTL and key `wallet-available:{userId}`. Invalidate on hold, release, and top-up. Wrong cache here is a money bug, so I would measure before caching.
+
+
+---
+## Additional Questions
+### Q16. How do you reduce API response size?
+**Answer:** I return DTOs with only required fields, paginate collections, avoid unnecessary navigation graphs, and compress responses where it makes sense.
+
+### Q17. What is the N+1 problem in an API?
+**Answer:** The API loads a list and then performs another database query for every row. I usually project the required fields in one query or use a carefully designed include.
+
+### Q18. Would you cache every API?
+**Answer:** No. I cache data that is expensive and safe to reuse. For wallet or permission data, stale values can be dangerous, so I need a clear invalidation strategy first.
