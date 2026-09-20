@@ -355,3 +355,29 @@ Concurrency: many tasks in progress (async I/O). Parallelism: many CPUs running 
 **Cross-answer:**
 
 Usually no. `DbContext` is not thread-safe. You can hammer the database and make things worse.
+
+
+---
+
+## Additional Questions
+
+### Q26. What is `IAsyncEnumerable<T>` useful for?
+**Answer:** It gives me a stream of async results. I can process each item with `await foreach` instead of waiting for the whole collection.
+
+**Cross-question:** Does it automatically make database queries cheap?
+
+**Cross-answer:** No. I still need sensible filtering, indexes, and paging. Streaming only changes how results are consumed.
+
+### Q27. What happens when `Task.WhenAll` has multiple failures?
+**Answer:** The combined task becomes faulted. I can inspect the individual tasks if I need all failures; I do not assume only the first operation failed.
+
+**Cross-question:** Would you use it for 10,000 database writes?
+
+**Cross-answer:** No. I would control concurrency and avoid overwhelming the database.
+
+### Q28. When is `ValueTask` actually worth using?
+**Answer:** When a method very often completes synchronously and allocation matters. Otherwise I prefer `Task` because it is simpler and easier to compose.
+
+**Cross-question:** Would you use it everywhere for performance?
+
+**Cross-answer:** No. I measure first. `ValueTask` has usage rules and can make code harder to reason about.
