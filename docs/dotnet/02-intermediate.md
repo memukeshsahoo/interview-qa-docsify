@@ -477,3 +477,15 @@ They need `DbContext` and `IUserSession`, which are per request. If I put `Booki
 **Cross-answer:**
 
 TickerQ jobs create a **new scope**, resolve `ApplicationDbContext` from that scope, then dispose it. Same rule as Hangfire.
+
+
+---
+## Additional Questions
+### Q26. Tracking vs AsNoTracking?
+**Answer:** Tracking is useful when I will update the entity. For read-only lists, AsNoTracking reduces tracking overhead and memory.
+
+### Q27. How do you avoid an N+1 query?
+**Answer:** I first check the SQL. Usually I project directly to a DTO with Select, or use Include carefully. I avoid querying children inside a loop.
+
+### Q28. When would you use keyset pagination?
+**Answer:** For very large tables where Skip becomes expensive. Instead of skipping thousands of rows, I ask for records after the last seen id or timestamp.
