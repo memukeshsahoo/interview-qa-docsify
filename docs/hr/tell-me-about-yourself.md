@@ -207,3 +207,13 @@ Pick one story with a result.
 > A project I am proud of is **[name]**. The problem was **[…]**. I **[what you did]**. The result was **[…]**.
 > I am strongest at **[skill]**.
 > I want this role because **[why it matches]**.
+
+
+---
+## Additional Questions
+### Q13. Give me your introduction in 30 seconds.
+**Answer:** “I am a full-stack developer focused on C#, ASP.NET Core, EF Core, PostgreSQL and Angular. Most of my work is backend APIs, authentication, payments, background jobs and real-time features, while I also build the Angular screens that consume them. I am looking for a role where I can take more ownership of backend design and production problems.”
+### Q14. Why are you looking for a change now?
+**Answer:** “I have learned a lot in my current role. I am now looking for broader backend ownership, stronger engineering challenges and a team where I can keep growing while contributing with the stack I already know.”
+### Q15. What do you want from your next role?
+**Answer:** “I want real product ownership, code reviews, good engineering practices and enough backend depth to work on performance, architecture and reliability, not only CRUD screens.”
