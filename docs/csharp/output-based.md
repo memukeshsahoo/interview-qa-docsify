@@ -394,3 +394,46 @@ It works, but you moved blocking work onto the thread pool. The method looks asy
 **Cross-answer:**
 
 Do not. `await CreateOrderAsync()` in the action. `.Result` can stall the thread pool.
+
+
+---
+
+## Additional Questions
+
+### Q16. What is printed?
+```csharp
+var numbers = new[] { 1, 2, 3 };
+var query = numbers.Where(x => x > 1);
+numbers[1] = 5;
+Console.WriteLine(query.First());
+```
+**Answer:** `5`.
+
+**Why:** `Where` is deferred. The array is changed before enumeration, so the query sees the new value.
+
+### Q17. What is printed?
+```csharp
+int x = 10;
+var a = x;
+a++;
+Console.WriteLine(x);
+Console.WriteLine(a);
+```
+**Answer:**
+```text
+10
+11
+```
+
+**Why:** `int` is a value type. Assigning it copies the value.
+
+### Q18. What is printed?
+```csharp
+var tasks = Enumerable.Range(1, 3)
+    .Select(async x => { await Task.Delay(10); return x * 2; });
+var result = await Task.WhenAll(tasks);
+Console.WriteLine(string.Join(",", result));
+```
+**Answer:** `2,4,6`.
+
+**Why:** Each async lambda returns a Task, and `WhenAll` waits for all of them before returning the results.
