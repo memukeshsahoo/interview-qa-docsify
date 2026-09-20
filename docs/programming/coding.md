@@ -438,3 +438,28 @@ Same shape as an NR user home list in NriCare. Status is an enum, not a magic st
 **Cross-answer:**
 
 Loads every booking for that user. Keep `Where` on `IQueryable`.
+
+
+---
+## Additional Questions
+### Q17. Find the first non-repeating character.
+**Answer:** Count each character first, then scan the string again and return the first character whose count is one. This is O(n) time.
+
+```csharp
+var counts = s.GroupBy(c => c).ToDictionary(g => g.Key, g => g.Count());
+var first = s.FirstOrDefault(c => counts[c] == 1);
+```
+
+### Q18. Remove duplicates while keeping order.
+**Answer:** Use a HashSet to remember what I already saw, then add only the first occurrence.
+
+```csharp
+var seen = new HashSet<int>();
+var result = numbers.Where(seen.Add).ToList();
+```
+
+### Q19. Binary search — when would you use it?
+**Answer:** When the input is sorted and I need to find a value efficiently. Each step removes about half the search space, so it is O(log n).
+
+### Q20. How would you retry an external API safely?
+**Answer:** Retry only transient failures, use a timeout and backoff, and use an idempotency key for operations that can create money/orders. Never blindly retry a non-idempotent payment.
