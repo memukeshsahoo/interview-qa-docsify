@@ -369,3 +369,29 @@ The runtime can reuse some string literals. I do not intern my own strings in ap
 **Cross-answer:**
 
 Interned strings are shared. Two parts of the app could lock the same string by accident and deadlock.
+
+
+---
+
+## Additional Questions
+
+### Q26. What is `IAsyncEnumerable<T>`?
+**Answer:** It lets me receive async results one by one with `await foreach`, instead of loading everything first. It is useful for large result sets or paged APIs.
+
+**Cross-question:** When would you prefer it over `Task<List<T>>`?
+
+**Cross-answer:** When the data can be consumed gradually and I do not need the complete list in memory.
+
+### Q27. Why use a `CancellationToken`?
+**Answer:** It lets the caller say, “stop this work.” I pass the request token to EF Core, HttpClient, and long-running loops instead of doing work after the client has gone away.
+
+**Cross-question:** Is cancellation automatic?
+
+**Cross-answer:** No. The called method has to observe the token or pass it to an API that supports it.
+
+### Q28. `Dictionary` vs `ConcurrentDictionary`?
+**Answer:** A normal dictionary is fine for normal single-threaded access. If multiple threads need to read and update it concurrently, I use `ConcurrentDictionary` or protect the dictionary with a lock.
+
+**Cross-question:** Is ConcurrentDictionary automatically safe for multi-step business logic?
+
+**Cross-answer:** No. A sequence like “check then update” may still need atomic APIs or a lock.
