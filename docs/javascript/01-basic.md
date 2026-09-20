@@ -367,3 +367,13 @@ One call stack. Slow I/O is handed off. When it finishes, a callback is queued. 
 **Cross-answer:**
 
 No. It just schedules the rest of the function for later.
+
+
+---
+## Additional Questions
+### Q26. `null` vs `undefined`?
+**Answer:** Both mean “no useful value”, but they have different semantics. I use null when I intentionally set a value to empty and undefined when a value/property is missing. The important thing is consistency.
+### Q27. What do `map`, `filter`, and `reduce` do?
+**Answer:** map transforms items, filter keeps matching items, and reduce combines items into one result such as a total or object.
+### Q28. What is optional chaining?
+**Answer:** `user?.profile?.name` stops and returns undefined if an earlier value is null or undefined. It avoids a lot of defensive if statements.
