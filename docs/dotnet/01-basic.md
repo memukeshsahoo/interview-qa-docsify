@@ -457,3 +457,15 @@ The AWS client is thread-safe and expensive to create. A new client per request 
 **Cross-answer:**
 
 No. Hub errors are `HubException` on the socket. HTTP middleware does not wrap that.
+
+
+---
+## Additional Questions
+### Q33. What is the difference between scoped, transient and singleton?
+**Answer:** Scoped is normally one instance per request, transient creates a new instance each time, singleton lives for the app lifetime. I keep DbContext scoped.
+
+### Q34. Why should middleware order matter?
+**Answer:** Middleware runs in the order I register it. Authentication must run before authorization, and exception handling should wrap the parts whose errors I want to catch.
+
+### Q35. What is a health check?
+**Answer:** It is an endpoint that tells deployment or monitoring whether the app is alive or ready. I can check dependencies like PostgreSQL for readiness.
