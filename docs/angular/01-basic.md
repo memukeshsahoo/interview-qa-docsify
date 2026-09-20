@@ -363,3 +363,13 @@ Types catch typos before runtime. Angular’s templates and DI work well with th
 **Cross-answer:**
 
 Then you threw the benefit away. I type HTTP DTOs. `unknown` is better than `any` if I truly do not know yet.
+
+
+---
+## Additional Questions
+### Q26. Signals vs BehaviorSubject?
+**Answer:** Signals are Angular's reactive state primitive and work naturally with templates. BehaviorSubject is RxJS and is useful when I need an Observable stream. I choose based on the data flow instead of mixing both everywhere.
+### Q27. Why use `takeUntilDestroyed`?
+**Answer:** It cleans up subscriptions when the component is destroyed. It is safer than manually keeping a Subject just for teardown.
+### Q28. What should an Angular interceptor not do?
+**Answer:** It should not contain business logic for a particular screen. Auth headers, common errors and request concerns fit well; feature logic belongs in services/components.
