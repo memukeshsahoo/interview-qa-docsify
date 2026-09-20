@@ -267,3 +267,15 @@ That is why a SuperAdmin can see all associations and an NR user cannot. The fil
 **Cross-answer:**
 
 It stores the token on `HttpContext` so SignalR or later middleware can read it. It is **not** a server-side session table for every API call.
+
+
+---
+## Additional Questions
+### Q8. What happens if two requests get 401 at the same time?
+**Answer:** I do not want both to refresh independently. Angular should share one refresh request and queue/retry the failed API calls after a new access token is available.
+
+### Q9. Why rotate refresh tokens?
+**Answer:** After a refresh, the old token becomes invalid. If an old token is used again, I can detect possible token theft and revoke the token family.
+
+### Q10. Can logout instantly invalidate an access JWT?
+**Answer:** Not if the access token is fully stateless. I normally keep it short-lived and revoke the refresh token. An immediate access-token denylist adds server-side state.
