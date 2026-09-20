@@ -247,3 +247,39 @@ The hub is not marked `[Authorize]`. It throws `HubException("Unauthorized")` if
 
 ### Q11. Why should SignalR messages be small?
 **Answer:** Large messages increase network and browser work. I usually send an id and changed fields, then let the client update or refetch the required record.
+
+### Q12. What was the biggest difficulty you faced while implementing SignalR?
+**Answer:** The main difficulty was making the real-time connection reliable outside local development. The hub worked locally, but we faced issues with WebSocket connection, CORS and Nginx proxy configuration when the client was deployed. I checked the network logs, verified the hub URL and JWT, configured the proxy for WebSocket upgrade, and fixed CORS for the actual client origin. We kept REST APIs for chat history and SignalR for real-time events, so reconnecting was easier.
+
+### Q13. Why did you use REST APIs and SignalR together for chat?
+**Answer:** I used REST for chat list and message history because it is easier to query, paginate and load again. SignalR is better for new messages and read receipts because they need real-time delivery. If the socket disconnects, the app can reconnect and fetch the latest history through REST.
+
+### Q14. What problem did you face with SignalR behind Nginx?
+**Answer:** Normal HTTP proxying was working, but the WebSocket connection was not reliable. I checked the Nginx location for the hub and made sure the WebSocket Upgrade and Connection headers were forwarded correctly. I also checked the hub path, SSL and CORS configuration.
+
+### Q15. How did you authenticate SignalR with JWT?
+**Answer:** The SignalR connection uses the same JWT authentication as the API. For the WebSocket connection the token can come through `access_token`. On the server I validate the token and use the authenticated user information. I do not trust a user id sent by the client for authorization.
+
+### Q16. What happens if a user is offline when a message is sent?
+**Answer:** I do not depend on SignalR to store the message. I save the message in the database first and then send the real-time event. If the user is offline, the message remains in the database. When the user comes back, the app loads the missed messages through the REST API and can also use push notification if required.
+
+### Q17. How did you handle reconnects?
+**Answer:** I used automatic reconnect on the Angular SignalR connection. But reconnect alone is not enough because some messages may be missed while the socket is down. After reconnect, I refresh the relevant chat data from the API so the UI is synchronized again.
+
+### Q18. How did you handle read and unread messages?
+**Answer:** The read state is stored in the database because it must survive a reconnect. SignalR is used to notify the other participant that the message or chat was read. So the database is the source of truth and SignalR updates the UI immediately.
+
+### Q19. How did you prevent duplicate messages?
+**Answer:** I make the database operation idempotent. A message should have a unique business or client request id so a retry does not create another row. I save the message first and then broadcast the saved message, instead of treating the SignalR event itself as the database operation.
+
+### Q20. How did you make sure a user could not join another user's chat?
+**Answer:** I do the authorization on the server. I check the authenticated user and verify that the user is actually a participant in that conversation or has the required permission. I never rely only on a chat id sent by Angular.
+
+### Q21. What issue can happen if the same user opens the app on two devices?
+**Answer:** The same user can have multiple SignalR connections. I treat the connection id separately and remove that connection when it disconnects. For presence, I would consider the user online while at least one active connection exists, instead of marking them offline when only one device disconnects.
+
+### Q22. What was the most challenging part of the communication system?
+**Answer:** The difficult part was not sending a message. It was making the whole flow reliable: authentication, correct participants, database persistence, reconnects, read state, CORS and production proxying. My approach was to keep the database as the source of truth, REST for history and SignalR for live events.
+
+### Q23. SignalR works locally but not in production. How would you debug it?
+**Answer:** I would check it layer by layer: browser network logs, hub URL, JWT, CORS, Nginx WebSocket configuration, SSL, server logs and finally whether the client is actually receiving the event. I would first confirm whether the connection itself is failing or whether the connection works but the event is not being delivered.
