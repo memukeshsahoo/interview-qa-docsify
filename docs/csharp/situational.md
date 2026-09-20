@@ -312,3 +312,29 @@ NriCare `GenerateBookingNumber` works on one instance. Wallet `GenerateTransacti
 **Cross-answer:**
 
 It still serializes threads **on that machine**. It does not replace a database uniqueness rule.
+
+
+---
+
+## Additional Questions
+
+### Q12. An API is slow only in production. How do you investigate?
+**Answer:** I first check request duration, database duration, external API calls, logs and traces. Then I find the slowest step instead of guessing. If SQL is the issue, I check the generated query and execution plan.
+
+**Cross-question:** First thing you change?
+
+**Cross-answer:** Nothing blindly. I measure first.
+
+### Q13. Two requests can update the same wallet at the same time. What do you do?
+**Answer:** I do not rely only on an in-memory lock because there may be multiple API servers. I use a database transaction with appropriate concurrency control, plus a unique/idempotency rule where needed.
+
+**Cross-question:** Why not just read balance, subtract, then save?
+
+**Cross-answer:** Two requests can read the same old balance and both spend it. That is a race condition.
+
+### Q14. An external payment call times out. Should you immediately retry?
+**Answer:** Only if the operation is safe to retry. For payments I send an idempotency key or use the provider's idempotency mechanism, then verify the final status before creating another payment.
+
+**Cross-question:** What if the provider actually processed it but my response timed out?
+
+**Cross-answer:** A blind retry could create a duplicate. I check the payment status using the same business/reference id.
