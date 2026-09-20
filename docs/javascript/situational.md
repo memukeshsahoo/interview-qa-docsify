@@ -272,3 +272,13 @@ Incident table: row click opens detail. Delete opened detail **and** deleted. `$
 **Cross-answer:**
 
 That stops browser default (submit, link). Bubbling is `stopPropagation`.
+
+
+---
+## Additional Questions
+### Q11. A page becomes slow after opening and closing it many times. What do you check?
+**Answer:** I look for subscriptions, timers, event listeners and global references that survive component destruction. Chrome memory snapshots can show whether objects keep growing.
+### Q12. An API response arrives out of order. How do you prevent stale data?
+**Answer:** For search I cancel or ignore older requests. In RxJS I use switchMap; in fetch I can use AbortController or a request version check.
+### Q13. A button creates duplicate records when clicked twice. What do you do?
+**Answer:** Disable or exhaust the UI action, but also make the API idempotent where duplicate creation matters. Client protection alone is not enough.
