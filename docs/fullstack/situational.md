@@ -325,3 +325,13 @@ That verifier branch surprises people. Money moves later when verification is ap
 **Cross-answer:**
 
 No. Reload wallet from the API. The in-memory booking DTO does not contain the split.
+
+
+---
+## Additional Questions
+### Q14. A user sees data from another tenant. What is your first priority?
+**Answer:** Stop access and verify the server-side tenant filter and authorization. I do not rely on Angular hiding the screen. Then I add a regression test for cross-tenant access.
+### Q15. The API returns 200 but Angular shows nothing. How do you debug?
+**Answer:** I inspect the actual response shape and the TypeScript model, then check mapping and template bindings. I also verify the request is hitting the expected environment.
+### Q16. The API is correct but the UI feels slow. What do you check?
+**Answer:** Network payload, number of rendered rows, change detection, template methods, images and third-party components. I profile before adding another library.
