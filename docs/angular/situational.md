@@ -631,3 +631,13 @@ Incident product: header user = `AuthService`. List → detail = router id. List
 **Cross-answer:**
 
 `@Input` between unrelated components, `window` globals, or NgRx for two screens.
+
+
+---
+## Additional Questions
+### Q26. A PrimeNG table becomes slow with thousands of rows. What do you do?
+**Answer:** I avoid rendering everything. I use server-side pagination/filtering, stable tracking, and virtual scrolling when the UX needs it. I also check whether the API is returning more data than the screen needs.
+### Q27. A component keeps making the same API call. How do you debug it?
+**Answer:** I check subscriptions, effects, route events and template async pipes. Then I see the browser Network tab. I make the data flow have one clear owner.
+### Q28. The UI updates after one API call but not another. What do you check?
+**Answer:** I check whether state was mutated in place, whether the component uses OnPush, and whether a signal was actually updated. I reproduce it with a small state change before changing change detection manually.
