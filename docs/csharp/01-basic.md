@@ -377,3 +377,13 @@ Yes, default interface methods exist. I keep them thin. Shared heavy code still 
 **Cross-answer:**
 
 UTC. I convert for the screen. Mixing local times from servers in two countries is a classic bug.
+
+
+---
+## Additional Questions
+### Q26. What is the difference between a class and a struct?
+**Answer:** A class is a reference type and a struct is a value type. I normally use classes for entities and services, and small structs/record structs for small value-like data.
+### Q27. What is a nullable value type?
+**Answer:** `int?` means an int can also be null. It is useful when null has a real meaning, like an optional database column.
+### Q28. What is an enum?
+**Answer:** An enum gives readable names to a fixed set of values, like `BookingStatus.Pending`. I prefer it over magic numbers or strings when the set is controlled by the code.
