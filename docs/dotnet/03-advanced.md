@@ -459,3 +459,15 @@ TickerQ. Job methods have `[TickerFunction]`. We enqueue with `ITimeTickerManage
 **Cross-answer:**
 
 Missed tickers can be cancelled on restart (`CancelMissedTickersOnApplicationRestart`). Document expiry currently schedules **another** daily job on every startup, so I would make that schedule idempotent.
+
+
+---
+## Additional Questions
+### Q33. What is idempotency in an API?
+**Answer:** Repeating the same request should not create the same business effect twice. For payments or wallet operations I use a unique business key/idempotency key and enforce it in the database.
+
+### Q34. Why is an outbox useful?
+**Answer:** If I save a database change and publish an event separately, one can succeed while the other fails. The outbox stores the event in the same database transaction, and a worker publishes it later.
+
+### Q35. How do you handle concurrency in a wallet?
+**Answer:** I use a database transaction and lock or concurrency control around the balance/ledger operation. I also make the business transaction id unique so retries cannot double-charge.
