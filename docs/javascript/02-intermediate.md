@@ -387,3 +387,13 @@ Yes. Strict. I use `window` on purpose if I need the global.
 **Answer:**
 
 Promise chains. Still better than nested callbacks. Today I use async/await. I still return the promise so callers can wait.
+
+
+---
+## Additional Questions
+### Q26. `Promise.all` vs `Promise.allSettled`?
+**Answer:** Promise.all fails when one promise rejects. allSettled waits for every promise and gives me each result, so it is useful for independent dashboard calls.
+### Q27. Debounce vs throttle?
+**Answer:** Debounce waits until activity stops, good for search. Throttle limits how often something runs, good for scroll or resize events.
+### Q28. What is the nullish coalescing operator?
+**Answer:** `value ?? fallback` uses the fallback only for null or undefined. Unlike `||`, it does not replace valid values like 0 or false.
