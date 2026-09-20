@@ -239,3 +239,13 @@ Even without the title:
 **Cross-answer:**
 
 Be honest. Example: “Backend is a bit stronger — EF, auth, APIs. Angular I am solid on screens, forms, and HttpClient. I am growing on signals and performance.”
+
+
+---
+## Additional Questions
+### Q17. Why should we not hire you?
+**Answer:** I would answer honestly: “If you need someone who has already led a very large team or has deep experience in a stack I have never used, I may not be the immediate fit. My strength is hands-on .NET/Angular product development and learning quickly.”
+### Q18. Tell me about a disagreement with a teammate.
+**Answer:** I explain the technical difference, listen to their reason, compare it against the requirement, and agree on a decision. If it is a security or data-loss issue, I escalate rather than silently accept it.
+### Q19. What motivates you?
+**Answer:** I like solving a real problem and seeing the feature work end to end. I also enjoy learning when the problem forces me to understand something deeper.
