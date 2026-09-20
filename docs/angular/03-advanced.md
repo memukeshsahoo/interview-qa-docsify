@@ -351,3 +351,13 @@ Use `<button>`. Screen readers and Enter/Space work. CSS can make it look like a
 **Cross-answer:**
 
 First listed is the outer one. Auth then logging or the other way — I pick and stay consistent. Errors should still be handled once.
+
+
+---
+## Additional Questions
+### Q26. When would you use `computed` instead of `effect`?
+**Answer:** If I need a value derived from other signals, I use computed. I use effect for side effects such as logging or syncing with browser APIs.
+### Q27. What is hydration good for?
+**Answer:** The server sends useful HTML first and the browser attaches Angular behavior to it. It can improve first paint and SEO for suitable applications.
+### Q28. What is a signal equality function for?
+**Answer:** It controls when Angular considers a new signal value different. I use it carefully; hiding real changes behind custom equality can create stale UI.
