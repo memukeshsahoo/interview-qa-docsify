@@ -583,3 +583,15 @@ This is the current NriCare common file API. I would treat it as a security fix,
 **Cross-answer:**
 
 Yes for private docs. Helper already builds presigned URLs (~50 minutes). The delete still must be authenticated.
+
+
+---
+## Additional Questions
+### Q16. A production endpoint takes 5 seconds. What do you check?
+**Answer:** I split the time into database, external APIs, application code and serialization. Logs/traces tell me where the time is going; then I optimize the actual bottleneck.
+
+### Q17. A user can access another user's record by changing the id in the URL. What do you do?
+**Answer:** I add server-side resource authorization. The query itself should be scoped to the current user/tenant where possible, not fetch the row first and trust the client.
+
+### Q18. An API gets many duplicate requests. How do you protect it?
+**Answer:** For expensive or sensitive operations I use idempotency keys, validation, rate limiting where appropriate, and database uniqueness constraints. Client-side button disabling alone is not enough.
