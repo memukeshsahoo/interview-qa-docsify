@@ -8,13 +8,13 @@ These separate “I used the syntax” from “I know what the runtime is doing�
 
 **Answer:**
 
-The GC frees heap objects that nothing points to. Short-lived objects are Gen 0. If they survive, they move to Gen 1, then Gen 2. Big objects go to the large object heap. Collections can pause threads.
+The GC (garbage collector) frees heap objects that nothing points to anymore. New, short-lived objects start in Gen 0. If they survive a collection, they move to Gen 1, and then to Gen 2. Big objects go to a separate large object heap. A collection can pause your threads while it runs.
 
 **Cross-question:** How can a GC language still “leak”?
 
 **Cross-answer:**
 
-You still hold a reference: a static list, an event handler you never unsubscribed, a cache with no limit. The GC cannot collect what you still point at. Unmanaged stuff also leaks if you skip `Dispose`.
+You still hold a reference somewhere. Think of a static list, an event handler you never unsubscribed, or a cache with no limit. The GC cannot collect what you still point at. Unmanaged resources also leak if you skip `Dispose`.
 
 ---
 
@@ -22,13 +22,13 @@ You still hold a reference: a static list, an event handler you never unsubscrib
 
 **Answer:**
 
-`Dispose` is “clean up now”. `DisposeAsync` is for cleanup that needs await, like flushing a network buffer. A finalizer is a last chance, slow, and you cannot await there. Prefer `SafeHandle` over a custom finalizer.
+`Dispose` means “clean up now”. `DisposeAsync` is for cleanup that needs an await, like flushing a network buffer. A finalizer is the last chance. It is slow, and you cannot await inside it. I prefer `SafeHandle` over writing my own finalizer.
 
 **Cross-question:** Why is a finalizer a last resort?
 
 **Cross-answer:**
 
-The object must live longer for the finalizer thread. It is hard to write correctly.
+The object has to stay alive longer so the finalizer thread can run it. And finalizers are hard to write correctly.
 
 ---
 
@@ -36,13 +36,13 @@ The object must live longer for the finalizer thread. It is hard to write correc
 
 **Answer:**
 
-`Span<T>` is a window over memory, no extra array if you do not need one. `stackalloc` puts bytes on the stack — fast and limited. `Span` cannot live on a class field.
+`Span<T>` is a window over existing memory, so you don’t create an extra array when you don’t need one. `stackalloc` puts bytes on the stack. That is fast, but the space is limited. One rule to remember: a `Span` cannot be a class field.
 
 **Cross-question:** When do I need `Memory<T>`?
 
 **Cross-answer:**
 
-Async methods, fields, queues. Take `.Span` only when you actually read or write.
+In async methods, in fields, and in queues — places where `Span` is not allowed. I take `.Span` only at the point where I actually read or write.
 
 ---
 
@@ -50,17 +50,17 @@ Async methods, fields, queues. Take `.Span` only when you actually read or write
 
 **Answer:**
 
-Covariance (`out T`): IEnumerable of string is IEnumerable of object. I only produce T.
+Covariance (`out T`): an IEnumerable of string can be used as an IEnumerable of object. It works because the type only produces T.
 
-Contravariance (`in T`): Action of object can be used as Action of string. I only consume T.
+Contravariance (`in T`): an Action of object can be used as an Action of string. It works because the type only consumes T.
 
-`List<T>` is neither, because you both add and read.
+`List<T>` is neither, because you both add to it and read from it.
 
 **Cross-question:** Why arrays are a trap?
 
 **Cross-answer:**
 
-`string[]` can be used as `object[]`. Then `o[0] = 123` blows up at runtime. Generics do not allow that hole.
+A `string[]` can be used as an `object[]`. Then `o[0] = 123` compiles but blows up at runtime. Generics do not allow that hole.
 
 ---
 
@@ -68,13 +68,13 @@ Contravariance (`in T`): Action of object can be used as Action of string. I onl
 
 **Answer:**
 
-The compiler makes a state machine. Locals that live across `await` become fields. A synchronization context (old ASP.NET, WinForms) says “continue on this same thread”. ASP.NET Core does not install one by default.
+The compiler turns an async method into a state machine. Local variables that live across an `await` become fields on that state machine. A synchronization context (old ASP.NET, WinForms) says “continue on this same thread” after the await. ASP.NET Core does not install one by default.
 
 **Cross-question:** When do I use `ConfigureAwait(false)`?
 
 **Cross-answer:**
 
-In libraries, so I do not force a UI context and I reduce deadlock risk. In ASP.NET Core app code it matters less. Do not use it if the next line must run on the UI thread.
+In libraries. That way I do not force the caller’s UI context, and I lower the deadlock risk. In ASP.NET Core app code it matters less. Don’t use it if the next line has to run on the UI thread.
 
 ---
 
@@ -82,13 +82,13 @@ In libraries, so I do not force a UI context and I reduce deadlock risk. In ASP.
 
 **Answer:**
 
-`WhenAll` waits for a known set of tasks. A `Channel` is a pipeline: producers and consumers, maybe forever, with a size limit so you do not flood memory.
+`WhenAll` waits for a known set of tasks. A `Channel` is a pipeline: producers put items in, consumers take them out, and it may run forever. You can give it a size limit so you don’t flood memory.
 
 **Cross-question:** `IAsyncEnumerable`?
 
 **Cross-answer:**
 
-`await foreach` — pull the next item when you are ready. Nice for paging an API.
+You use it with `await foreach` and pull the next item when you are ready. It works nicely for paging through an API.
 
 ---
 
@@ -96,13 +96,13 @@ In libraries, so I do not force a UI context and I reduce deadlock risk. In ASP.
 
 **Answer:**
 
-`Interlocked` is for simple atomic numbers. `lock` is the usual tool. ConcurrentDictionary is for many threads hitting a map. It is not always faster. If almost no extra threads, a simple lock can win. Measure.
+`Interlocked` is for simple atomic operations on numbers. `lock` is the usual tool. ConcurrentDictionary is for many threads hitting the same map. But it is not always faster. If there is hardly any contention, a simple lock can win. So I measure.
 
 **Cross-question:** Is `volatile` a lock?
 
 **Cross-answer:**
 
-No. It only limits some reordering and stale reads. I do not use it for business rules.
+No. It only limits some reordering and stale reads. I don’t use it for business rules.
 
 ---
 
@@ -110,13 +110,13 @@ No. It only limits some reordering and stale reads. I do not use it for business
 
 **Answer:**
 
-`Expression<Func<...>>` is data. EF reads the tree and writes SQL. A `Func` is already code. EF cannot see inside it.
+An `Expression<Func<...>>` is data — a tree that describes the code. EF reads that tree and writes SQL from it. A `Func` is already compiled code, so EF cannot see inside it.
 
 **Cross-question:** Can I compile an expression?
 
 **Cross-answer:**
 
-Yes, `.Compile()` makes a delegate. Then it is no longer a tree. Do not pass that to EF and expect SQL.
+Yes. `.Compile()` turns it into a delegate. But then it is no longer a tree, so don’t pass that to EF and expect SQL.
 
 ---
 
@@ -124,13 +124,13 @@ Yes, `.Compile()` makes a delegate. Then it is no longer a tree. Do not pass tha
 
 **Answer:**
 
-They write C# at compile time (JSON, logging, DI). You pay at build, not with slow reflection at startup. Good for AOT too.
+They write C# for you at compile time — for example for JSON, logging, and DI. You pay the cost at build time instead of with slow reflection at startup. They are also good for AOT.
 
 **Cross-question:** Generator vs reflection?
 
 **Cross-answer:**
 
-Reflection is flexible and slower. Generators are rigid and fast.
+Reflection is flexible but slower. Generators are rigid but fast.
 
 ---
 
@@ -138,13 +138,13 @@ Reflection is flexible and slower. Generators are rigid and fast.
 
 **Answer:**
 
-No. They are compiler warnings. `string` and `string?` are the same at runtime. You can still get null reference errors if you use `!` or turn warnings off.
+No. They are only compiler warnings. At runtime, `string` and `string?` are the same type. You can still get null reference errors if you use `!` or turn the warnings off.
 
 **Cross-question:** Then why bother?
 
 **Cross-answer:**
 
-They catch a lot of bugs before production. I treat those warnings as errors on new code.
+They catch a lot of bugs before production. On new code I treat those warnings as errors.
 
 ---
 
@@ -152,13 +152,13 @@ They catch a lot of bugs before production. I treat those warnings as errors on 
 
 **Answer:**
 
-Property patterns, `>`, `and` / `or`, list patterns like `[1, .., var last]`. They make checks shorter and safer than a pile of ifs.
+There are property patterns, relational patterns like `>`, `and` / `or`, and list patterns like `[1, .., var last]`. They make checks shorter and safer than a pile of ifs.
 
 **Cross-question:** Switch vs visitor?
 
 **Cross-answer:**
 
-Switch is fine for a closed set of types. Visitor is for when many operations grow on a stable set of types. Most apps are fine with switch + records.
+A switch is fine for a closed set of types. A visitor is for when you keep adding operations over a stable set of types. Most apps are fine with switch plus records.
 
 ---
 
@@ -166,13 +166,13 @@ Switch is fine for a closed set of types. Visitor is for when many operations gr
 
 **Answer:**
 
-`class Foo(IClock clock)` is great for DI. The parameter is in scope for the whole class. Do not treat it like a casual local you can mutate without thought. For domain objects with rules, a normal constructor that validates can be clearer.
+`class Foo(IClock clock)` is great for DI. The catch is that the parameter stays in scope for the whole class. So don’t treat it like a casual local you can change without thinking. For domain objects with rules, a normal constructor that validates can be clearer.
 
 **Cross-question:** Collection expressions `[1,2,3]`?
 
 **Cross-answer:**
 
-Nice syntax for lists and spans. Same idea as collection initializers, shorter.
+Nice syntax for lists and spans. Same idea as collection initializers, just shorter.
 
 ---
 
@@ -180,13 +180,13 @@ Nice syntax for lists and spans. Same idea as collection initializers, shorter.
 
 **Answer:**
 
-An assembly is the DLL you ship. The CLR loads it and JIT-compiles methods on first call (unless you used AOT / ReadyToRun).
+An assembly is the DLL you ship. The CLR (the .NET runtime) loads it, and the JIT compiles each method to machine code the first time it is called — unless you used AOT or ReadyToRun.
 
 **Cross-question:** Does a strong name make the app secure?
 
 **Cross-answer:**
 
-It proves the DLL identity and that it was not edited. It is not encryption and not auth for users.
+It proves the DLL’s identity and that nobody edited it. It is not encryption, and it is not authentication for users.
 
 ---
 
@@ -194,13 +194,13 @@ It proves the DLL identity and that it was not edited. It is not encryption and 
 
 **Answer:**
 
-Now you can write one method that adds `int` or `double` because numbers share interfaces with static operators. Old C# had no “T must support `+`”.
+Now you can write one method that adds `int` or `double`, because number types share interfaces with static operators. Old C# had no way to say “T must support `+`”.
 
 **Cross-question:** Boxing in generic math?
 
 **Cross-answer:**
 
-The point is to avoid boxing. Constraints use those interfaces so the JIT can call the right operators.
+Avoiding boxing is the whole point. The constraints use those interfaces, so the JIT can call the right operators directly.
 
 ---
 
@@ -208,13 +208,13 @@ The point is to avoid boxing. Constraints use those interfaces so the JIT can ca
 
 **Answer:**
 
-Interop, image buffers, very hot parsers. Never in normal business code. Pinning objects for too long is bad for GC.
+Interop, image buffers, and very hot parsers. Never in normal business code. Also, pinning objects for too long is bad for the GC.
 
 **Cross-question:** `fixed` vs `GCHandle`?
 
 **Cross-answer:**
 
-`fixed` is scoped. `GCHandle` pinned is for longer native calls; you must `Free`.
+`fixed` is scoped to a block. A pinned `GCHandle` is for longer native calls, and you must call `Free` yourself.
 
 ---
 
@@ -222,13 +222,13 @@ Interop, image buffers, very hot parsers. Never in normal business code. Pinning
 
 **Answer:**
 
-Records or `init` properties, constructor checks, `with` for copies, read-only lists. Value objects compare by data. Entities usually compare by id.
+I use records or `init` properties, checks in the constructor, `with` for copies, and read-only lists. Value objects compare by their data. Entities usually compare by id.
 
 **Cross-question:** EF and immutability?
 
 **Cross-answer:**
 
-EF likes to set properties. Fully frozen entities fight the ORM. Common pattern: mutable entity for storage, immutable events/DTOs around it.
+EF likes to set properties. Fully frozen entities fight the ORM. A common pattern is a mutable entity for storage, with immutable events or DTOs around it.
 
 ---
 
@@ -236,13 +236,13 @@ EF likes to set properties. Fully frozen entities fight the ORM. Common pattern:
 
 **Answer:**
 
-Boxing makes a new object each time — the lock does nothing useful. Strings can be interned — you might lock the same string as some other library. Always `private readonly object _gate = new()`.
+Boxing makes a new object every time, so the lock does nothing useful. Strings can be interned, so you might end up locking the same string as some other library. I always use `private readonly object _gate = new()`.
 
 **Cross-question:** `System.Threading.Lock` in newer .NET?
 
 **Cross-answer:**
 
-A real lock type so you do not lock the wrong thing. Still know classic `lock`.
+It is a real lock type, so you don’t lock on the wrong thing by accident. You should still know the classic `lock`.
 
 ---
 
@@ -250,13 +250,13 @@ A real lock type so you do not lock the wrong thing. Still know classic `lock`.
 
 **Answer:**
 
-It is a “do not reorder this” fence for the CPU and compiler. You almost never write one by hand. `lock` and `Interlocked` already include the needed fences.
+It is a “do not reorder this” fence for the CPU and the compiler. You almost never write one by hand. `lock` and `Interlocked` already include the fences you need.
 
 **Cross-question:** Should I use `Thread.MemoryBarrier` in a web app?
 
 **Cross-answer:**
 
-No. Use higher-level tools.
+No. Use the higher-level tools.
 
 ---
 
@@ -264,13 +264,13 @@ No. Use higher-level tools.
 
 **Answer:**
 
-So hot code can pass around a location without copying a big struct. Easy to create bugs (dangling refs). I do not use them in normal API code.
+So hot code can pass around a location in memory without copying a big struct. They make it easy to create bugs, like dangling refs. I don’t use them in normal API code.
 
 **Cross-question:** Can a `ref` return point at a local that is gone?
 
 **Cross-answer:**
 
-The compiler tries to stop that. That is why `ref struct` and ref safety rules exist.
+The compiler tries to stop that. That is why `ref struct` and the ref safety rules exist.
 
 ---
 
@@ -278,13 +278,13 @@ The compiler tries to stop that. That is why `ref struct` and ref safety rules e
 
 **Answer:**
 
-I look for: boxing, extra strings, LINQ in a tight loop, lambdas that allocate, `ToList` for no reason. I only go to `Span` after measuring. Clear code first.
+I look for boxing, extra strings, LINQ in a tight loop, lambdas that allocate, and `ToList` calls for no reason. I only move to `Span` after measuring. Clear code comes first.
 
 **Cross-question:** Is LINQ always slow?
 
 **Cross-answer:**
 
-No. It is extra delegates and sometimes extra collections. On a 20-item list nobody cares. On a 10-million loop in a game tick, maybe.
+No. It adds extra delegates and sometimes extra collections. On a 20-item list nobody cares. In a 10-million-item loop inside a game tick, maybe it matters.
 
 ---
 
@@ -292,13 +292,13 @@ No. It is extra delegates and sometimes extra collections. On a 20-item list nob
 
 **Answer:**
 
-App code: usually not, because there is no sync context. Library code: still a good habit. Never block with `.Result` either way.
+In app code, usually not, because there is no sync context. In library code it is still a good habit. Either way, never block with `.Result`.
 
 **Cross-question:** Can `await` resume on another thread?
 
 **Cross-answer:**
 
-Yes. After I/O, a different thread-pool thread may continue. Do not keep thread-local data without care. Do not use `Thread.CurrentPrincipal` as your only user store.
+Yes. After I/O, a different thread-pool thread may continue the work. So be careful with thread-local data. And don’t use `Thread.CurrentPrincipal` as your only place to store the user.
 
 ---
 
@@ -306,7 +306,7 @@ Yes. After I/O, a different thread-pool thread may continue. Do not keep thread-
 
 **Answer:**
 
-IL is the bytecode C# compiles to. I look at it (SharpLab, ILSpy) when I need to know if something boxes or allocates. I do not read IL every day.
+IL is the bytecode that C# compiles to. I look at it (with SharpLab or ILSpy) when I need to know if something boxes or allocates. I don’t read IL every day.
 
 **Cross-question:** Does `async` make huge IL?
 
@@ -320,13 +320,13 @@ The state machine is bigger than a sync method. That is normal. I still use asyn
 
 **Answer:**
 
-No. It copies the top level. Nested objects are still shared unless you replace them too.
+No. It copies only the top level. Nested objects are still shared unless you replace them too.
 
 **Cross-question:** Record equality with a list inside?
 
 **Cross-answer:**
 
-The generated equality uses the list’s own Equals, which for `List<T>` is not “same items”. People get surprised. For value-like lists, think carefully or compare yourself.
+The generated equality calls the list’s own Equals, and for `List<T>` that does not mean “same items”. People get surprised by this. For lists that should act like values, think it through or write the comparison yourself.
 
 ---
 
@@ -334,13 +334,13 @@ The generated equality uses the list’s own Equals, which for `List<T>` is not 
 
 **Answer:**
 
-Pass a `CancellationToken` from the HTTP request or a timeout. Check it in loops. Pass it to EF and HttpClient. Do not ignore it.
+I pass a `CancellationToken` from the HTTP request or from a timeout. I check it inside loops. I pass it on to EF and HttpClient. I don’t ignore it.
 
 **Cross-question:** What if I swallow `OperationCanceledException`?
 
 **Cross-answer:**
 
-The caller thinks the work finished. For HTTP, cancellation is normal when the user navigates away. I let it bubble as cancel, not as a 500.
+Then the caller thinks the work finished. For HTTP, cancellation is normal — the user just navigated away. I let it bubble up as a cancel, not as a 500.
 
 ---
 
@@ -348,13 +348,13 @@ The caller thinks the work finished. For HTTP, cancellation is normal when the u
 
 **Answer:**
 
-Concurrency: many tasks in progress (async I/O). Parallelism: many CPUs running at the same time (`Parallel.For`, `Task.Run` on CPU work). A web API is mostly concurrent I/O, not “use all cores to compute one request”.
+Concurrency means many tasks are in progress at once, like async I/O. Parallelism means many CPUs are running at the same time, like `Parallel.For` or `Task.Run` on CPU work. A web API is mostly concurrent I/O, not “use all cores to compute one request”.
 
 **Cross-question:** Should an API `Parallel.ForEach` a database save?
 
 **Cross-answer:**
 
-Usually no. `DbContext` is not thread-safe. You can hammer the database and make things worse.
+Usually no. `DbContext` is not thread-safe. And you can hammer the database and make things worse.
 
 
 ---
@@ -362,21 +362,21 @@ Usually no. `DbContext` is not thread-safe. You can hammer the database and make
 ## Additional Questions
 
 ### Q26. What is `IAsyncEnumerable<T>` useful for?
-**Answer:** It gives me a stream of async results. I can process each item with `await foreach` instead of waiting for the whole collection.
+**Answer:** It gives me a stream of async results. I can handle each item with `await foreach` instead of waiting for the whole collection.
 
 **Cross-question:** Does it automatically make database queries cheap?
 
-**Cross-answer:** No. I still need sensible filtering, indexes, and paging. Streaming only changes how results are consumed.
+**Cross-answer:** No. I still need sensible filtering, indexes, and paging. Streaming only changes how I consume the results.
 
 ### Q27. What happens when `Task.WhenAll` has multiple failures?
-**Answer:** The combined task becomes faulted. I can inspect the individual tasks if I need all failures; I do not assume only the first operation failed.
+**Answer:** The combined task becomes faulted. If I need all the failures, I look at the individual tasks. I don’t assume only the first operation failed.
 
 **Cross-question:** Would you use it for 10,000 database writes?
 
-**Cross-answer:** No. I would control concurrency and avoid overwhelming the database.
+**Cross-answer:** No. I would control how many run at once so I don’t overwhelm the database.
 
 ### Q28. When is `ValueTask` actually worth using?
-**Answer:** When a method very often completes synchronously and allocation matters. Otherwise I prefer `Task` because it is simpler and easier to compose.
+**Answer:** When a method very often completes synchronously and the allocation matters. Otherwise I prefer `Task`, because it is simpler and easier to compose.
 
 **Cross-question:** Would you use it everywhere for performance?
 

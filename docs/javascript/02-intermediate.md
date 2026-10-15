@@ -1,6 +1,6 @@
 # JavaScript — Intermediate
 
-Closures, prototypes, promises. This is the usual second wave of questions.
+Closures, prototypes, promises. This is the usual second round of questions.
 
 ---
 
@@ -8,7 +8,7 @@ Closures, prototypes, promises. This is the usual second wave of questions.
 
 **Answer:**
 
-A function remembers the variables around it, even after the outer function finished.
+A closure is when a function remembers the variables around it, even after the outer function has finished.
 
 ```javascript
 function makeCounter() {
@@ -17,13 +17,13 @@ function makeCounter() {
 }
 ```
 
-I use this for private state and callbacks.
+I use this for private state and for callbacks.
 
 **Cross-question:** Memory leak?
 
 **Cross-answer:**
 
-A long-lived inner function keeps those outer variables alive. A DOM handler that closes over a big object can keep it after you left the page. Remove listeners.
+Yes, it can cause one. A long-lived inner function keeps those outer variables alive. For example, a DOM handler that closes over a big object can keep it in memory even after you leave the page. So I remove listeners.
 
 ---
 
@@ -38,13 +38,13 @@ for (var i = 0; i < 3; i++) {
 // 3 3 3
 ```
 
-One `var i`. `let` makes a new `i` each loop.
+There is only one `var i`, shared by all three callbacks. `let` creates a new `i` for each loop iteration.
 
 **Cross-question:** Does `let` in `for` really get a new binding?
 
 **Cross-answer:**
 
-Yes. That is in the spec so this bug dies.
+Yes. It is written into the spec so this bug goes away.
 
 ---
 
@@ -52,13 +52,13 @@ Yes. That is in the spec so this bug dies.
 
 **Answer:**
 
-`function` declarations can be called above their line. `let`/`const` are in a dead zone until the line runs. Touch them early and you throw.
+`function` declarations can be called above their line. `let`/`const` sit in a “dead zone” (the TDZ) until their line runs. If you touch them early, it throws.
 
 **Cross-question:** Classes?
 
 **Cross-answer:**
 
-You cannot use the class before its line. Like `let`, not like `function`.
+You cannot use a class before its line. It behaves like `let`, not like `function`.
 
 ---
 
@@ -66,13 +66,13 @@ You cannot use the class before its line. Like `let`, not like `function`.
 
 **Answer:**
 
-`class` is nicer syntax over prototypes. Methods live on `Type.prototype` and are shared. Each instance has a link up the chain.
+`class` is just nicer syntax on top of prototypes. Methods live on `Type.prototype` and are shared. Each instance has a link up the prototype chain.
 
 **Cross-question:** Own property vs prototype?
 
 **Cross-answer:**
 
-Fields on `this` are own. Methods are usually on the prototype. `Object.hasOwn` checks own.
+Fields set on `this` are own properties. Methods are usually on the prototype. `Object.hasOwn` checks for own properties.
 
 ---
 
@@ -80,13 +80,13 @@ Fields on `this` are own. Methods are usually on the prototype. `Object.hasOwn` 
 
 **Answer:**
 
-They set `this`. `bind` returns a new function. `call` runs now with a list of args. `apply` uses an array of args.
+All three set `this`. `bind` returns a new function. `call` runs the function right now with a list of arguments. `apply` does the same but takes an array of arguments.
 
 **Cross-question:** Bind an arrow?
 
 **Cross-answer:**
 
-Does not change `this`. Arrows are lexical.
+It does not change `this`. Arrows take `this` from where they are written.
 
 ---
 
@@ -94,19 +94,19 @@ Does not change `this`. Arrows are lexical.
 
 **Answer:**
 
-Pending, then fulfilled or rejected. `.then` returns a new promise. If I forget to return or throw, I swallow bugs.
+A promise starts as pending, then becomes fulfilled or rejected. `.then` returns a new promise. If I forget to return or throw inside it, I end up swallowing bugs.
 
 **Cross-question:** `all` vs `allSettled` vs `race` vs `any`?
 
 **Cross-answer:**
 
-`all`: one fail fails all.
+`all`: if one fails, the whole thing fails.
 
-`allSettled`: wait for every one.
+`allSettled`: waits for every one to finish.
 
-`race`: first to finish, success or fail.
+`race`: the first one to finish, success or fail.
 
-`any`: first success.
+`any`: the first success.
 
 ---
 
@@ -114,13 +114,13 @@ Pending, then fulfilled or rejected. `.then` returns a new promise. If I forget 
 
 **Answer:**
 
-Same engine. `await` is easier to read. `try/catch` works with `await`. Many `await`s in a row are sequential. `Promise.all` runs together.
+It is the same thing underneath. `await` is just easier to read, and `try/catch` works with `await`. One thing to watch: many `await`s in a row run one after another. `Promise.all` runs them together.
 
 **Cross-question:** `forEach(async ...)`?
 
 **Cross-answer:**
 
-`forEach` does not wait. Use `for...of` or `map` + `Promise.all`.
+`forEach` does not wait. I use `for...of`, or `map` + `Promise.all`.
 
 ---
 
@@ -136,13 +136,13 @@ console.log('d');
 // a d c b
 ```
 
-Promises before timers.
+Promise callbacks run before timers.
 
 **Cross-question:** Can microtasks starve the screen?
 
 **Cross-answer:**
 
-Yes, if I keep queueing them forever. Paint waits until that queue is empty.
+Yes, if I keep queueing them forever. The browser waits until that queue is empty before it paints.
 
 ---
 
@@ -150,9 +150,9 @@ Yes, if I keep queueing them forever. Paint waits until that queue is empty.
 
 **Answer:**
 
-Debounce: wait until the user pauses (search).
+Debounce: wait until the user pauses, like in a search box.
 
-Throttle: at most once per X ms (scroll).
+Throttle: run at most once every X ms, like on scroll.
 
 **Cross-question:** Tiny debounce?
 
@@ -168,7 +168,7 @@ function debounce(fn, ms) {
 }
 ```
 
-Clear the timer on destroy in Angular.
+In Angular, I clear the timer when the component is destroyed.
 
 ---
 
@@ -176,13 +176,13 @@ Clear the timer on destroy in Angular.
 
 **Answer:**
 
-Map: any key. Set: unique values. WeakMap: object keys, does not keep them alive, cannot loop keys. WeakMap is for extra data on a DOM node, not a string-id cache.
+Map: a key can be anything. Set: unique values only. WeakMap: keys must be objects, it does not keep them alive, and you cannot loop over the keys. I use WeakMap for attaching extra data to a DOM node, not for a cache keyed by string ids.
 
 **Cross-question:** Cache API results in WeakMap?
 
 **Cross-answer:**
 
-Keys must be objects. String ids need a Map plus a size limit.
+The keys must be objects. For string ids I use a Map with a size limit.
 
 ---
 
@@ -190,13 +190,13 @@ Keys must be objects. String ids need a Map plus a size limit.
 
 **Answer:**
 
-`{ ...obj }` shares nested objects. Changing `copy.address.city` changes the original. That also breaks OnPush if I thought I had a new object.
+`{ ...obj }` still shares the nested objects. So changing `copy.address.city` also changes the original. It also breaks OnPush change detection if I thought I had a new object.
 
 **Cross-question:** Fix?
 
 **Cross-answer:**
 
-Copy the nested part too, or use a structured clone when I really need a deep copy.
+I copy the nested part too, or use a structured clone when I really need a deep copy.
 
 ---
 
@@ -204,13 +204,13 @@ Copy the nested part too, or use a structured clone when I really need a deep co
 
 **Answer:**
 
-Optional chain. Nullish default. `??=` assigns only if nullish, so `0` stays.
+`?.` is optional chaining. `??` gives a default only for null or undefined. `??=` assigns only if the value is null or undefined, so `0` stays.
 
 **Cross-question:** `||` for pageSize?
 
 **Cross-answer:**
 
-`0 || 10` is 10. Wrong. Use `??`.
+`0 || 10` gives 10, which is wrong. Use `??`.
 
 ---
 
@@ -218,13 +218,13 @@ Optional chain. Nullish default. `??=` assigns only if nullish, so `0` stays.
 
 **Answer:**
 
-`for...of` uses iterators. `function*` + `yield` makes one. Observables are push. Generators are pull. UI events fit RxJS better.
+`for...of` uses iterators. `function*` with `yield` creates one. Observables push values to you, while generators let you pull values. For UI events, RxJS is a better fit.
 
 **Cross-question:** `for...in` on arrays?
 
 **Cross-answer:**
 
-Gives index strings and extra keys. I do not use it for arrays.
+It gives you the indexes as strings, plus any extra keys. I do not use it for arrays.
 
 ---
 
@@ -232,13 +232,13 @@ Gives index strings and extra keys. I do not use it for arrays.
 
 **Answer:**
 
-The event goes down (capture) then up (bubble). `preventDefault` stops the browser action (form submit). `stopPropagation` stops other handlers on parents.
+An event first travels down (capture), then back up (bubble). `preventDefault` stops the browser's default action, like a form submit. `stopPropagation` stops handlers on the parents from running.
 
 **Cross-question:** Row click vs button click?
 
 **Cross-answer:**
 
-The button click bubbles to the row. I stop propagation if the row should not also fire.
+The button click bubbles up to the row. If the row should not also fire, I stop propagation.
 
 ---
 
@@ -246,13 +246,13 @@ The button click bubbles to the row. I stop propagation if the row should not al
 
 **Answer:**
 
-I cannot “fix CORS” in Angular except a **dev proxy**. The API must send the right headers. Postman works because it is not a browser.
+I cannot really “fix CORS” in Angular, except with a **dev proxy**. The API has to send the right headers. Postman works because it is not a browser.
 
 **Cross-question:** Is CORS auth?
 
 **Cross-answer:**
 
-No. CORS is a browser lock. The API still needs login.
+No. CORS is a browser safety lock. The API still needs its own login.
 
 ---
 
@@ -260,13 +260,13 @@ No. CORS is a browser lock. The API still needs login.
 
 **Answer:**
 
-`bind` in a template creates a new function every check. I bind once in the class or use an arrow field.
+`bind` in a template creates a new function on every check. I bind once in the class, or use an arrow field.
 
 **Cross-question:** Arrow as a class field?
 
 **Cross-answer:**
 
-Keeps `this`. Costs one function per instance. Fine for UI handlers.
+It keeps `this`. It costs one function per instance, which is fine for UI handlers.
 
 ---
 
@@ -274,13 +274,13 @@ Keeps `this`. Costs one function per instance. Fine for UI handlers.
 
 **Answer:**
 
-`===` is not deep. I compare ids, or JSON stringify if I accept the limits, or a helper. For tests, a matcher. For Angular, I often replace the object instead of deep-watching.
+`===` does not compare deeply. I compare ids, or use JSON stringify if I accept its limits, or a helper function. In tests, I use a matcher. In Angular, I often replace the object instead of deep-watching it.
 
 **Cross-question:** Lodash `isEqual` in a hot list?
 
 **Cross-answer:**
 
-Can be slow. Prefer id + version.
+It can be slow there. I prefer comparing id + version.
 
 ---
 
@@ -288,13 +288,13 @@ Can be slow. Prefer id + version.
 
 **Answer:**
 
-Schedule a function as a microtask, same family as `then`. Useful to run after the current stack, before paint.
+It schedules a function as a microtask, the same kind as `then`. It is useful to run something after the current stack, but before paint.
 
 **Cross-question:** vs `setTimeout(0)`?
 
 **Cross-answer:**
 
-Microtask is sooner. Timeout is a task.
+The microtask runs sooner. A timeout is a normal task.
 
 ---
 
@@ -302,13 +302,13 @@ Microtask is sooner. Timeout is a task.
 
 **Answer:**
 
-`window.onerror` and `unhandledrejection` catch leftovers. In Angular I also use `ErrorHandler`. I still try/catch near risky I/O.
+`window.onerror` and `unhandledrejection` catch whatever slips through. In Angular I also use `ErrorHandler`. I still use try/catch near risky I/O.
 
 **Cross-question:** Swallow in empty catch?
 
 **Cross-answer:**
 
-Never. At least log with context.
+Never. At the very least, I log it with some context.
 
 ---
 
@@ -316,13 +316,13 @@ Never. At least log with context.
 
 **Answer:**
 
-`const` = cannot reassign the variable. `freeze` = cannot add/change keys (shallow). Nested objects are not frozen.
+`const` means you cannot reassign the variable. `freeze` means you cannot add or change keys, but only at the top level. Nested objects are not frozen.
 
 **Cross-question:** Frozen in Angular state?
 
 **Cross-answer:**
 
-Nice for discipline. Signals + new objects are the usual path.
+It is nice for discipline. But signals plus new objects is the usual approach.
 
 ---
 
@@ -330,13 +330,13 @@ Nice for discipline. Signals + new objects are the usual path.
 
 **Answer:**
 
-A imports B imports A. You can see a `let` still in the TDZ. I put shared bits in a third file.
+That is when A imports B, and B imports A. You can end up reading a `let` that is still in the TDZ. I move the shared parts into a third file.
 
 **Cross-question:** `import type` in TS?
 
 **Cross-answer:**
 
-Erased. No runtime cycle from types only.
+It is erased at compile time. So types alone do not create a runtime cycle.
 
 ---
 
@@ -344,13 +344,13 @@ Erased. No runtime cycle from types only.
 
 **Answer:**
 
-Right now, when you construct it. The resolve/reject functions are for later. I do not wrap an existing promise in `new Promise` without a reason (that is the “promise constructor anti-pattern”).
+Right away, when you construct the promise. The resolve/reject functions are for later. I do not wrap an existing promise in `new Promise` without a reason (that is the “promise constructor anti-pattern”).
 
 **Cross-question:** Convert callback API?
 
 **Cross-answer:**
 
-Yes, `new Promise` is for wrapping `fs.readFile(cb)` style. Not for wrapping `fetch`.
+Yes, that is what `new Promise` is for, wrapping `fs.readFile(cb)` style APIs. Not for wrapping `fetch`.
 
 ---
 
@@ -358,13 +358,13 @@ Yes, `new Promise` is for wrapping `fs.readFile(cb)` style. Not for wrapping `fe
 
 **Answer:**
 
-Both copy array-like things. `Array.from` can map in one step. Spread needs something iterable.
+Both turn array-like things into a real array. `Array.from` can also map in the same step. Spread needs something iterable.
 
 **Cross-question:** `NodeList`?
 
 **Cross-answer:**
 
-`querySelectorAll` is not a real array. I use `Array.from` or spread to get `.map`.
+What `querySelectorAll` returns is not a real array. I use `Array.from` or spread to get `.map`.
 
 ---
 
@@ -372,13 +372,13 @@ Both copy array-like things. `Array.from` can map in one step. Spread needs some
 
 **Answer:**
 
-Modules and classes are strict. Assign to a missing variable throws. `this` is not `window` in a bare call. `with` is banned.
+Modules and classes are always strict. Assigning to an undeclared variable throws. `this` is not `window` in a plain function call. And `with` is banned.
 
 **Cross-question:** Script became a module and `this` broke?
 
 **Cross-answer:**
 
-Yes. Strict. I use `window` on purpose if I need the global.
+Yes, because modules are strict. If I need the global, I use `window` on purpose.
 
 ---
 
@@ -386,14 +386,14 @@ Yes. Strict. I use `window` on purpose if I need the global.
 
 **Answer:**
 
-Promise chains. Still better than nested callbacks. Today I use async/await. I still return the promise so callers can wait.
+With promise chains. They are still better than nested callbacks. Today I use async/await. Either way, I return the promise so callers can wait on it.
 
 
 ---
 ## Additional Questions
 ### Q26. `Promise.all` vs `Promise.allSettled`?
-**Answer:** Promise.all fails when one promise rejects. allSettled waits for every promise and gives me each result, so it is useful for independent dashboard calls.
+**Answer:** Promise.all fails as soon as one promise rejects. allSettled waits for every promise and gives me each result, so it is useful for independent dashboard calls.
 ### Q27. Debounce vs throttle?
-**Answer:** Debounce waits until activity stops, good for search. Throttle limits how often something runs, good for scroll or resize events.
+**Answer:** Debounce waits until the activity stops, which is good for search. Throttle limits how often something runs, which is good for scroll or resize events.
 ### Q28. What is the nullish coalescing operator?
 **Answer:** `value ?? fallback` uses the fallback only for null or undefined. Unlike `||`, it does not replace valid values like 0 or false.

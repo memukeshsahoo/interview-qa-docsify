@@ -8,15 +8,15 @@ Angular + ASP.NET Core together. Each one is a story you can tell in an intervie
 
 **Answer:**
 
-Open Network. Check URL, status, JSON.
+I open the Network tab and check the URL, the status, and the JSON.
 
-- Body has rows, UI empty → mapping, `*ngIf`, wrong property names (`title` vs `Title`).
-- Body `[]` → tenant, filter, user. Debug the API next.
-- CORS error → not an empty list; the call never succeeded.
+- Body has rows but the UI is empty → it's the mapping, an `*ngIf`, or wrong property names (`title` vs `Title`).
+- Body is `[]` → check the tenant, the filter, and the user. Debug the API next.
+- CORS error → that's not an empty list; the call never succeeded.
 
 **Example:**
 
-C# DTO `Title`, JSON default is `title` in newer System.Text.Json. Angular interface expects `Title` — mismatch.
+The C# DTO has `Title`, but ASP.NET Core sends JSON in camelCase by default, so the API returns `title`. The Angular interface has to use `title` too. If it expects `Title`, the field comes back `undefined` and the list looks empty.
 
 ```csharp
 public sealed class IncidentListDto
@@ -32,13 +32,13 @@ interface IncidentListDto { id: number; title: string; }
 
 **Real-world example:**
 
-Incident dashboard cards were 0. Network showed `[]`. Tenant claim was missing after refresh. API fail-closed to empty instead of 401. We returned 401 when tenant was missing so the UI could log in again.
+Our incident dashboard cards showed 0. The Network tab showed `[]`. The tenant claim was missing after a refresh, and the API failed closed by returning an empty list instead of a 401. We changed it to return 401 when the tenant was missing, so the UI could log the user in again.
 
 **Cross-question:** First tool?
 
 **Cross-answer:**
 
-Network tab, not a rewrite of the component.
+The Network tab, not a rewrite of the component.
 
 ---
 
@@ -46,21 +46,21 @@ Network tab, not a rewrite of the component.
 
 **Answer:**
 
-UI: shared service or URL. API: still authorize. A service is not security. If A “selects” incident 12, B may show it only after GET `/api/incidents/12` succeeds for **this** user.
+On the UI side, I connect them with a shared service or the URL. On the API side, I still authorize every call, because a service is not security. If A “selects” incident 12, B should show it only after GET `/api/incidents/12` succeeds for **this** user.
 
 **Example:**
 
-A writes `selectedId` to a service. B calls the API with that id. If 404, B shows empty, not cached data from A.
+A writes `selectedId` to a service. B calls the API with that id. If it gets a 404, B shows an empty state, not cached data from A.
 
 **Real-world example:**
 
-A malicious user types another tenant’s id in a service (or query string). B must not show a DTO that A stuffed in memory. B loads from the API.
+A malicious user could type another tenant's id into a service (or the query string). B must not show a DTO that A stuffed into memory. B loads it from the API.
 
 **Cross-question:** Pass the whole object from A to B in the service to skip HTTP?
 
 **Cross-answer:**
 
-OK as a cache for the same user, same tenant. Refresh and deep link still need GET by id.
+That's OK as a cache for the same user and the same tenant. But a refresh or a deep link still needs a GET by id.
 
 ---
 
@@ -68,7 +68,7 @@ OK as a cache for the same user, same tenant. Refresh and deep link still need G
 
 **Answer:**
 
-Password in query string, logs, error payloads, or JWT in the URL. HTTPS off. Token in `console.log`. Tenant from the body.
+It can leak through the password in a query string, in logs, or in error payloads, or a JWT in the URL. Also if HTTPS is off, if the token goes into `console.log`, or if the tenant is taken from the body.
 
 **Example:**
 
@@ -77,17 +77,17 @@ POST /api/auth/login
 { "email": "a@b.com", "password": "..." }
 ```
 
-Server hashes, compares, returns token in JSON or httpOnly cookie. Angular stores as agreed. Later: `Authorization: Bearer` header. API uses claims.
+The server hashes and compares the password, then returns a token in JSON or in an httpOnly cookie. Angular stores it the way we agreed. Later calls send an `Authorization: Bearer` header, and the API uses the claims.
 
 **Real-world example:**
 
-A gateway logged the full request body and passwords landed in Seq. We redacted `password` and never logged `Authorization`.
+A gateway logged the full request body, and passwords ended up in Seq. We redacted `password` and stopped logging `Authorization`.
 
 **Cross-question:** JWT in localStorage?
 
 **Cross-answer:**
 
-Common; XSS can steal it. Know the trade vs httpOnly cookies + CSRF.
+It's common, but XSS can steal it. You should know the trade-off against httpOnly cookies, which then need CSRF protection.
 
 ---
 
@@ -95,7 +95,7 @@ Common; XSS can steal it. Know the trade vs httpOnly cookies + CSRF.
 
 **Answer:**
 
-POST with `[Authorize]`. Server sets tenant from context, not from JSON. Counts query the same tenant. Angular service may fire `changed`; dashboard refetches counts. Cache keys include tenant.
+The POST has `[Authorize]`. The server sets the tenant from the request context, not from the JSON. The counts query uses the same tenant. The Angular service can fire a `changed` event, and the dashboard refetches its counts. Cache keys include the tenant.
 
 **Example:**
 
@@ -105,13 +105,13 @@ incident.TenantKey = _user.TenantKey; // ignore dto.TenantKey
 
 **Real-world example:**
 
-KPI “open = 5” after create still showed 4 until refresh — dashboard never subscribed to `changed`. We emitted after POST 201 and reloaded counts. Tenant key on cache stopped a later Redis mix-up.
+After a create, the KPI still showed “open = 4” instead of 5 until a refresh, because the dashboard never subscribed to `changed`. We emitted the event after the POST returned 201 and reloaded the counts. Putting the tenant key on the cache also stopped a later Redis mix-up.
 
 **Cross-question:** Count in Angular from the list in memory?
 
 **Cross-answer:**
 
-Wrong if the list is paged. Count on the server.
+That's wrong if the list is paged. I count on the server.
 
 ---
 
@@ -119,7 +119,7 @@ Wrong if the list is paged. Count on the server.
 
 **Answer:**
 
-`FormData` + `HttpClient`. API: size, extension, generated name, permission on the parent incident. Do not put files in git or public `wwwroot` if they are private.
+`FormData` with `HttpClient`. The API checks size and extension, saves under a generated name, and checks permission on the parent incident. Private files don't go in git or in the public `wwwroot`.
 
 **Example:**
 
@@ -131,13 +131,13 @@ this.http.post(`/api/incidents/${id}/files`, fd);
 
 **Real-world example:**
 
-Users attached photos to a ticket. First version used the original file name and one user uploaded `../../web.config`. We now save `guid + ext` under a non-web folder and download through an authorized action.
+Users attached photos to a ticket. The first version used the original file name, and one user uploaded `../../web.config`. Now we save the file as `guid + ext` in a folder outside the web root and serve downloads through an authorized action.
 
 **Cross-question:** Progress bar?
 
 **Cross-answer:**
 
-`HttpClient` `reportProgress` + `observe: 'events'`. Still the same security checks.
+`HttpClient` with `reportProgress` and `observe: 'events'`. The security checks stay the same.
 
 ---
 
@@ -145,7 +145,7 @@ Users attached photos to a ticket. First version used the original file name and
 
 **Answer:**
 
-Network TTFB high → API/SQL. Huge download → payload or bundle. CPU in Performance → list render (`trackBy`, virtual scroll). Guessing “Angular is slow” without the waterfall wastes time.
+If TTFB (time to first byte) is high in the Network tab, it's the API or SQL. A huge download means the payload or the bundle. High CPU in the Performance panel means list rendering (`trackBy`, virtual scroll). Guessing “Angular is slow” without looking at the waterfall wastes time.
 
 **Example:**
 
@@ -153,13 +153,13 @@ Waterfall: TTFB 3s, download 20ms → fix SQL/projection. TTFB 40ms, download 8M
 
 **Real-world example:**
 
-Incident board felt laggy. API was 50ms. 3,000 DOM rows without `track`. Virtual scroll + `track id` made it smooth. We almost added Redis for no reason.
+Our incident board felt laggy, but the API took 50ms. The page had 3,000 DOM rows without `track`. Virtual scroll plus `track id` made it smooth. We almost added Redis for no reason.
 
 **Cross-question:** First fix in a 30-minute interview task?
 
 **Cross-answer:**
 
-Measure, then the biggest bar in the waterfall.
+Measure first, then fix the biggest bar in the waterfall.
 
 ---
 
@@ -167,21 +167,21 @@ Measure, then the biggest bar in the waterfall.
 
 **Answer:**
 
-Access token expired. Interceptor should refresh **once**, retry the save, or redirect to login without losing the form if you cached it. Do not fire two refreshes.
+The access token expired. The interceptor should refresh **once** and retry the save, or, if you cached the form, redirect to login without losing it. Don't fire two refreshes.
 
 **Example:**
 
-Queue 401s on one `refresh$`. Retry original POST. On refresh fail, store form in `sessionStorage` (no passwords) and go to login.
+Queue the 401s on one `refresh$`, then retry the original POST. If the refresh fails, store the form in `sessionStorage` (no passwords) and go to login.
 
 **Real-world example:**
 
-Long incident form. Token TTL 15 minutes. Save returned 401 and wiped the form. We added refresh + “session expired, log in, we kept your draft.”
+We had a long incident form and a 15-minute token TTL. Save returned 401 and wiped the form. We added refresh and a message: “session expired, log in, we kept your draft.”
 
 **Cross-question:** Put the access token in the URL to avoid expiry?
 
 **Cross-answer:**
 
-No. URLs leak via logs and history.
+No. URLs leak through logs and browser history.
 
 ---
 
@@ -189,21 +189,21 @@ No. URLs leak via logs and history.
 
 **Answer:**
 
-Different token, different header, different tenant host, or Swagger hits another environment. Compare the `Authorization` header (do not paste secrets). Compare origin and route.
+It could be a different token, a different header, a different tenant host, or Swagger pointing at another environment. I compare the `Authorization` header (without pasting secrets anywhere), and I compare the origin and the route.
 
 **Example:**
 
-Angular interceptor attached the token only to `/api`. A call to `/incidents` missed the prefix and went to the Angular host — 403/404 from the SPA server, not the API.
+The Angular interceptor attached the token only to `/api` calls. A call to `/incidents` was missing the prefix, so it went to the Angular host and got a 403/404 from the SPA server, not from the API.
 
 **Real-world example:**
 
-`environment.apiUrl` missing slash: `https://api.site.com` + `incidents` vs `https://api.site.com/api/incidents`. Swagger used the full path. We fixed `apiUrl` and interceptor.
+`environment.apiUrl` was missing a slash: `https://api.site.com` + `incidents` instead of `https://api.site.com/api/incidents`. Swagger used the full path. We fixed `apiUrl` and the interceptor.
 
 **Cross-question:** CORS only on Swagger?
 
 **Cross-answer:**
 
-Swagger same origin. Angular not. Different issue from 403.
+Swagger runs on the same origin as the API, and Angular doesn't. That's a different issue from a 403.
 
 ---
 
@@ -211,7 +211,7 @@ Swagger same origin. Angular not. Different issue from 403.
 
 **Answer:**
 
-SignalR hub on the API, one connection service in Angular. Server broadcasts to the **tenant group** only. Boards update a signal. Auth on the hub.
+I put a SignalR hub on the API and one connection service in Angular. The server broadcasts only to the **tenant group**. The boards update a signal. The hub requires auth.
 
 **Example:**
 
@@ -225,13 +225,13 @@ conn.on('taken', (id, name) => this.board.markTaken(id, name));
 
 **Real-world example:**
 
-Two agents opened the same new ticket. Both clicked Take. Without live updates they both thought they owned it. Hub + row version on the API allowed only one Take; the other board moved the card.
+Two agents opened the same new ticket and both clicked Take. Without live updates, they both thought they owned it. The hub plus a row version on the API allowed only one Take, and the other agent's board moved the card.
 
 **Cross-question:** Poll every 2 seconds instead?
 
 **Cross-answer:**
 
-OK for a small team. Live Take needs faster feedback; SignalR fits.
+That's OK for a small team. But a live Take needs faster feedback, and SignalR fits that.
 
 ---
 
@@ -239,7 +239,7 @@ OK for a small team. Live Take needs faster feedback; SignalR fits.
 
 **Answer:**
 
-No. Tenant comes from the authenticated host or a claim the **server** issued. Client `TenantId` is spoofable. Unrelated components sharing a `TenantService` in Angular is UX only, not isolation.
+I say no. The tenant comes from the authenticated host or from a claim the **server** issued. A `TenantId` sent by the client can be faked. Unrelated components sharing a `TenantService` in Angular is just for the UI, not isolation.
 
 **Example:**
 
@@ -250,13 +250,13 @@ var tenant = _tenantContext.Slug; // from validated claim / host map
 
 **Real-world example:**
 
-A tester changed `tenantId` in DevTools and saw another org’s list until the API ignored the body and used the token. The Angular service still stores tenant for the UI label only.
+A tester changed `tenantId` in DevTools and saw another org's list, until we made the API ignore the body and use the token. The Angular service still stores the tenant, but only for the UI label.
 
 **Cross-question:** Super-admin switching tenant?
 
 **Cross-answer:**
 
-A **server** endpoint “act as tenant X” after a permission check, then a new token or server-side session. Not a free field on every DTO.
+That's a **server** endpoint, “act as tenant X”, behind a permission check, which then issues a new token or server-side session. It's not a free field on every DTO.
 
 ---
 
@@ -264,7 +264,7 @@ A **server** endpoint “act as tenant X” after a permission check, then a new
 
 **Answer:**
 
-The card is **available** balance: `Balance - active holds`. The table column `Balance` is gross. If 1000 sits in Balance and 600 is held, available is 400. Check `HoldBalances` for Active rows on that wallet, including expiry. Then confirm the UI bound `available` vs `balance`.
+The card shows the **available** balance, which is `Balance - active holds`. The `Balance` column in the table is the gross amount. If Balance is 1000 and 600 is on hold, available is 400. I check `HoldBalances` for Active rows on that wallet, including expiry. Then I confirm whether the UI is bound to `available` or `balance`.
 
 **Example:**
 
@@ -274,13 +274,13 @@ Balance = result.WalletBalance - result.HoldAmount
 
 **Real-world example:**
 
-NriCare `GetWalletBalanceAsync` returns that subtracted number. The transactions page also returns `TotalHoldAmountCount`. A “wrong wallet” bug is often a hold the UI did not show.
+In NriCare, `GetWalletBalanceAsync` returns that subtracted number. The transactions page also returns `TotalHoldAmountCount`. A “wrong wallet” bug is often just a hold the UI didn't show.
 
 **Cross-question:** Expired hold still blocking book?
 
 **Cross-answer:**
 
-It can. Booking create sums all Active holds and ignores `ExpiresAt`. The balance API skips expired ones. That mismatch is a real debug story.
+It can. Booking create adds up all Active holds and ignores `ExpiresAt`, but the balance API skips expired ones. That mismatch makes a good real debug story.
 
 ---
 
@@ -288,21 +288,21 @@ It can. Booking create sums all Active holds and ignores `ExpiresAt`. The balanc
 
 **Answer:**
 
-Access JWT is ~20 minutes. Chat hub also used `access_token` on the socket. Interceptor should refresh once, retry REST, and reconnect SignalR with the new token. If refresh fails, keep the typed message in memory and send them to login.
+The access JWT lasts about 20 minutes, and the chat hub also used `access_token` on the socket. The interceptor should refresh once, retry the REST call, and reconnect SignalR with the new token. If the refresh fails, keep the typed message in memory and send the user to login.
 
 **Example:**
 
-`POST /api/Auth/refresh-token` with the refresh string. Old refresh row is revoked. New pair comes back.
+`POST /api/Auth/refresh-token` with the refresh string. The old refresh row gets revoked, and a new pair comes back.
 
 **Real-world example:**
 
-NriCare refresh rotates in a transaction. If two tabs refresh the same token, the second should fail because the first revoked it. That is rotation. The user must log in again on the losing tab.
+In NriCare, refresh rotates the token inside a transaction. If two tabs refresh the same token, the second one should fail, because the first one already revoked it. That's what rotation means. The user has to log in again on the tab that lost.
 
 **Cross-question:** Put refresh token on the SignalR URL?
 
 **Cross-answer:**
 
-No. Only the short access token, and do not log the full hub URL.
+No. Only the short-lived access token goes there, and I don't log the full hub URL.
 
 ---
 
@@ -310,28 +310,28 @@ No. Only the short access token, and do not log the full hub URL.
 
 **Answer:**
 
-Network: did `change-status` return success? Then `ReleasePayment` — holds Released, user Balance down, SP/platform/MA ledgers created. Association filter: MA user should see their wallet, SuperAdmin sees all. If FCM failed, the screen just did not refresh — pull-to-refresh should still load the new ledger from GET wallet.
+First the Network tab: did `change-status` return success? Then `ReleasePayment`: holds should be Released, the user's Balance should go down, and the SP/platform/MA ledgers should be created. Then the association filter: an MA user should see their own wallet, and SuperAdmin sees all. If FCM failed, the screen just didn't refresh, and pull-to-refresh should still load the new ledger from GET wallet.
 
 **Example:**
 
-Complete with no verifier → `Completed` + `ReleasePayment`. With verifier → `UnderReview` and **no** payout yet.
+Complete with no verifier → `Completed` + `ReleasePayment`. With a verifier → `UnderReview` and **no** payout yet.
 
 **Real-world example:**
 
-That verifier branch surprises people. Money moves later when verification is approved. Reject uses the refund path (`ReleaseHold`).
+That verifier branch surprises people. The money moves later, when verification is approved. A reject goes through the refund path (`ReleaseHold`).
 
 **Cross-question:** Count the payout in Angular from the old booking object?
 
 **Cross-answer:**
 
-No. Reload wallet from the API. The in-memory booking DTO does not contain the split.
+No. Reload the wallet from the API. The in-memory booking DTO doesn't contain the split.
 
 
 ---
 ## Additional Questions
 ### Q14. A user sees data from another tenant. What is your first priority?
-**Answer:** Stop access and verify the server-side tenant filter and authorization. I do not rely on Angular hiding the screen. Then I add a regression test for cross-tenant access.
+**Answer:** Stop the access, and check the server-side tenant filter and authorization. I don't rely on Angular hiding the screen. Then I add a regression test for cross-tenant access.
 ### Q15. The API returns 200 but Angular shows nothing. How do you debug?
-**Answer:** I inspect the actual response shape and the TypeScript model, then check mapping and template bindings. I also verify the request is hitting the expected environment.
+**Answer:** I look at the actual response shape and the TypeScript model, then check the mapping and template bindings. I also make sure the request is hitting the environment I expect.
 ### Q16. The API is correct but the UI feels slow. What do you check?
-**Answer:** Network payload, number of rendered rows, change detection, template methods, images and third-party components. I profile before adding another library.
+**Answer:** Network payload, how many rows are rendered, change detection, methods called in templates, images and third-party components. I profile before adding another library.

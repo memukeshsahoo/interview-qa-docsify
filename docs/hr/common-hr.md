@@ -16,7 +16,7 @@ Name something real: product, users, stack, or how they work. Do not say “I ne
 
 **Cross-answer:**
 
-Say 2–3 facts you actually checked: product, customers, recent news. If you did not research, say so and recover: “I focused on the role and stack. I would like to hear how you see the product in the next year.”
+Say 2–3 facts you actually checked: product, customers, recent news. If you did not research, say so honestly and recover: “I focused on the role and stack. I would like to hear how you see the product in the next year.”
 
 ---
 
@@ -48,7 +48,7 @@ Be exact. Do not promise a date you cannot keep.
 
 **Cross-answer:**
 
-> I can ask. I will not promise a cut that hurts my current handover. I would rather start a week later and arrive clean.
+> I can ask. But I will not promise an earlier date if it hurts my current handover. I would rather start a week later and arrive clean.
 
 ---
 
@@ -96,7 +96,7 @@ Honest and calm.
 
 **Cross-answer:**
 
-> I help with a review or a pair session first. If it keeps happening, I talk to them privately, then to the lead if needed. I do not gossip in the group chat.
+> First I help with a review or a pair session. If it keeps happening, I talk to them privately, and then to the lead if needed. I do not gossip in the group chat.
 
 ---
 
@@ -104,7 +104,7 @@ Honest and calm.
 
 **Answer:**
 
-> I want it specific: what, why, and an example. I do not love vague “this feels wrong”. If I disagree, I say why, then I follow the team decision. After the review I actually change the code, not only nod.
+> I like it specific: what, why, and an example. I do not love vague feedback like “this feels wrong”. If I disagree, I say why, then I follow the team decision. After the review I actually change the code, not only nod.
 
 **Cross-question:** Tell me about hard feedback you got.
 
@@ -124,7 +124,7 @@ Honest and calm.
 
 **Cross-answer:**
 
-> I explain the tech risk in user words: “this can lose data” or “this will be slow on Monday morning”. Then we decide together. If I still think it is dangerous, I escalate once, in writing, short.
+> I explain the tech risk in user words: “this can lose data” or “this will be slow on Monday morning”. Then we decide together. If I still think it is dangerous, I escalate once — in writing, and short.
 
 ---
 
@@ -138,7 +138,7 @@ Honest and calm.
 
 **Cross-answer:**
 
-> I was. QA can miss things. I owned the code. Blame does not fix the next release.
+> I was. QA can miss things, but I owned the code. Blame does not fix the next release.
 
 ---
 
@@ -180,7 +180,7 @@ Say your real preference and that you can work with theirs. Do not pretend you l
 
 **Cross-answer:**
 
-> It is better than a fake answer. Then show how you would learn. That is what seniors do.
+> It is better than a fake answer. Say it, then show how you would learn. That is what seniors do.
 
 ---
 
@@ -188,7 +188,7 @@ Say your real preference and that you can work with theirs. Do not pretend you l
 
 **Answer:**
 
-> Clear goals, fast feedback, protects the team from random urgent work every hour. Lets me own a feature. Does not only talk at standup. I do not need a friend. I need someone I can trust.
+> Someone who gives clear goals and fast feedback, and protects the team from random urgent work every hour. Someone who lets me own a feature and does more than just talk at standup. I do not need a friend. I need someone I can trust.
 
 **Cross-question:** What if your manager is very hands-on?
 
@@ -202,7 +202,7 @@ Say your real preference and that you can work with theirs. Do not pretend you l
 
 **Answer:**
 
-> First: stop the bleeding. Then find the cause. I write a short timeline: what we saw, what we did, what we will change. I do not guess-restart servers in a loop without notes.
+> First: stop the bleeding. Then find the cause. I write a short timeline: what we saw, what we did, what we will change. I do not keep restarting servers on a guess without taking notes.
 
 **Cross-question:** Can you work late?
 
@@ -224,7 +224,7 @@ Even without the title:
 
 **Cross-answer:**
 
-> I do not take the keyboard and finish it. I sit with them, ask what they already tried, and let them type. I review kindly but I do not rubber-stamp bad security.
+> I do not take the keyboard and finish it. I sit with them, ask what they already tried, and let them type. I review kindly, but I do not rubber-stamp bad security.
 
 ---
 
@@ -238,7 +238,7 @@ Even without the title:
 
 **Cross-answer:**
 
-Be honest. Example: “Backend is a bit stronger — EF, auth, APIs. Angular I am solid on screens, forms, and HttpClient. I am growing on signals and performance.”
+Be honest. Example: “Backend is a bit stronger — EF, auth, APIs. On Angular I am solid with screens, forms, and HttpClient. I am growing on signals and performance.”
 
 
 ---

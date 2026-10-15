@@ -1,6 +1,6 @@
 # Refresh token, JWT, and “is it still stateless?”
 
-Speak this in an interview. Use the **real-world** bit if they ask about your last project.
+Say this out loud in an interview. Use the **real-world** part if they ask about your last project.
 
 ---
 
@@ -10,13 +10,13 @@ Speak this in an interview. Use the **real-world** bit if they ask about your la
 
 I use **two tokens**.
 
-1. **Access token** — JWT, short life (5–15 minutes). Angular sends it on every API call: `Authorization: Bearer ...`. The API **only validates** the signature, issuer, audience, and expiry. It does **not** look this token up in the database. That part is **stateless**.
+1. **Access token** — a JWT with a short life (5–15 minutes). Angular sends it on every API call as `Authorization: Bearer ...`. The API **only validates** the signature, issuer, audience, and expiry. It does **not** look this token up in the database. That part is **stateless**.
 
-2. **Refresh token** — long life (days), random bytes (or a JWT that I still treat as a handle). Angular sends it **only** to `/api/auth/refresh` (and logout/revoke). The **auth** side stores a **hash** of it (and family id, user, tenant, expiry, revoked flag). On refresh I rotate: old token dies, new pair is issued.
+2. **Refresh token** — a long life (days). It’s random bytes (or a JWT that I still treat as just a handle). Angular sends it **only** to `/api/auth/refresh` (and to logout/revoke). The **auth** side stores a **hash** of it, along with the family id, user, tenant, expiry, and a revoked flag. On every refresh I rotate it: the old token dies and a new pair is issued.
 
-Angular: interceptor. If a call returns 401, I call refresh **once**, queue other 401s, retry. If refresh fails, logout.
+On the Angular side I use an interceptor. If a call returns 401, I call refresh **once**, queue up any other 401s, and retry them. If refresh fails, I log the user out.
 
-I never put the refresh token in a query string. I never log it. Prefer httpOnly cookie for refresh, or memory + silent refresh. Access token often in memory.
+I never put the refresh token in a query string, and I never log it. For the refresh token I prefer an httpOnly cookie, or memory plus silent refresh. The access token usually lives in memory.
 
 **Example:**
 
@@ -66,22 +66,22 @@ if (err.status === 401 && !req.url.includes('/auth/refresh')) {
 
 **Real-world example:**
 
-In an incident product, agents kept a ticket form open for 40 minutes. Access JWT died at 15 minutes. Without refresh, Save returned 401 and the form looked “logged out”. Refresh rotated the token, retried Save, and the ticket closed. Refresh hashes lived in the tenant/auth database so we could **logout all devices** after a stolen laptop.
+In an incident product, agents kept a ticket form open for 40 minutes. The access JWT expired after 15 minutes. Without refresh, Save returned 401 and it looked like the user was “logged out”. With refresh, the token was rotated, Save was retried, and the ticket closed. We kept the refresh hashes in the tenant/auth database, so we could **log out all devices** after a laptop was stolen.
 
 **Cross-question:** If you insert the refresh token in the DB, how is JWT still **stateless**?
 
 **Cross-answer:**
 
-**The access token is still stateless.** Every normal REST call (`GET /api/incidents`) does **not** hit a session table. The API checks the JWT cryptographically and trusts the claims until it expires.
+**The access token is still stateless.** A normal REST call (`GET /api/incidents`) does **not** touch any session table. The API checks the JWT signature and trusts the claims until the token expires.
 
-**The refresh token is the stateful exception**, on purpose. Stateless JWT cannot be revoked early (unless you add a denylist, which is also state). We store refresh tokens so we can:
+**The refresh token is the stateful exception**, and that’s on purpose. A stateless JWT can’t be revoked early (unless you add a denylist, which is also state). We store refresh tokens so we can:
 
 - rotate them
 - revoke one device
 - detect reuse (theft)
 - force logout
 
-So the design is:
+So the design looks like this:
 
 | Piece | Stateful? | Used on |
 | --- | --- | --- |
@@ -90,11 +90,11 @@ So the design is:
 
 I do **not** store every access token. That would make the whole API stateful and slower.
 
-If they say “pure stateless refresh”: you *can* make the refresh token a JWT and store nothing. Then you **cannot** revoke a stolen refresh token until it expires. For a real product I do not do that.
+If they push for “pure stateless refresh”: yes, you *can* make the refresh token a JWT and store nothing. But then you **cannot** revoke a stolen refresh token until it expires. For a real product, I don’t do that.
 
 **Follow-up:** Is ASP.NET Core cookie auth stateless?
 
-**Follow-up answer:** No. Cookie auth is a **session** (or a protected cookie the server issued). JWT access tokens are the stateless style. Mixing cookie + JWT without a plan confuses everyone.
+**Follow-up answer:** No. Cookie auth is a **session** (or a protected cookie that the server issued). JWT access tokens are the stateless style. Mixing cookies and JWT without a clear plan confuses everyone.
 
 ---
 
@@ -102,7 +102,7 @@ If they say “pure stateless refresh”: you *can* make the refresh token a JWT
 
 **Answer:**
 
-If the DB leaks, raw tokens would work as login. A hash is one-way. I compare hash(incoming) to the stored hash. Same idea as passwords, but it is a random token, not a user password — still hash it (SHA-256 is common for high-entropy tokens; passwords still need a slow hasher like bcrypt/argon).
+If the database leaks, raw tokens could be used to log in. A hash is one-way. When a token comes in, I hash it and compare it to the stored hash. It’s the same idea as passwords. This is a random token, not a user password, but I still hash it. SHA-256 is common for high-entropy tokens like this; passwords still need a slow hasher like bcrypt/argon.
 
 **Example:**
 
@@ -116,13 +116,13 @@ static string Sha256(string raw)
 
 **Real-world example:**
 
-A backup of the auth table was restored on a dev machine. Hashes were useless as tokens. If we had stored raw refresh tokens, every user session would be stolen.
+Someone restored a backup of the auth table on a dev machine. The hashes were useless as tokens. If we had stored raw refresh tokens, every user session could have been stolen.
 
 **Cross-question:** Can I store the JWT access token in the same table?
 
 **Cross-answer:**
 
-I do not. Access tokens are short and validated by signature. Storing them makes the API look them up every call — that is a session, not JWT.
+I don’t. Access tokens are short-lived and checked by their signature. If you store them, the API has to look them up on every call — and that’s a session, not JWT.
 
 ---
 
@@ -130,7 +130,7 @@ I do not. Access tokens are short and validated by signature. Storing them makes
 
 **Answer:**
 
-Each refresh issues a **new** refresh token and **kills** the old one. If someone sends an **already revoked** refresh token, I assume theft: revoke the **whole family** for that user/device.
+Rotation means each refresh issues a **new** refresh token and **kills** the old one. Reuse detection means: if someone sends a refresh token that is **already revoked**, I assume it was stolen and revoke the **whole family** of tokens for that user/device.
 
 **Example:**
 
@@ -144,13 +144,13 @@ if (row.RevokedAt is not null)
 
 **Real-world example:**
 
-Attacker stole an old refresh token from logs. User already refreshed, so that token was revoked. Using it again locked the family and we asked the user to log in on all devices.
+An attacker stole an old refresh token from logs. The user had already refreshed, so that token was revoked. When the attacker used it, the whole family got locked, and we asked the user to log in again on all devices.
 
 **Cross-question:** Sliding expiry without rotation?
 
 **Cross-answer:**
 
-Weaker. A stolen token works until the long expiry. Rotation shrinks the window.
+That’s weaker. A stolen token keeps working until its long expiry. Rotation makes that window much smaller.
 
 ---
 
@@ -158,24 +158,24 @@ Weaker. A stolen token works until the long expiry. Rotation shrinks the window.
 
 **Answer:**
 
-- **Refresh:** httpOnly Secure cookie (best against XSS) or memory.
-- **Access:** memory (variable / signal). Survive refresh of the SPA by using the refresh cookie silently.
+- **Refresh:** an httpOnly Secure cookie (best protection against XSS), or memory.
+- **Access:** memory (a variable or a signal). When the user reloads the SPA, I get a new access token silently using the refresh cookie.
 
-`localStorage` is easy and **XSS-stealable**. Many apps still use it; I say the risk out loud.
+`localStorage` is easy, but anything in it can be **stolen by XSS**. Many apps still use it; if I do, I call out the risk clearly.
 
 **Example:**
 
-API `Set-Cookie: refresh=...; HttpOnly; Secure; SameSite=Lax; Path=/api/auth`. Angular never reads that cookie. `withCredentials: true` on refresh calls. CORS must allow that exact origin, not `*`.
+The API sends `Set-Cookie: refresh=...; HttpOnly; Secure; SameSite=Lax; Path=/api/auth`. Angular never reads that cookie. Refresh calls use `withCredentials: true`. CORS must allow that exact origin, not `*`.
 
 **Real-world example:**
 
-Incident SPA on `app.company.com`, API on `api.company.com`. We used SameSite and a specific CORS origin. Access token stayed in a service signal. Header still showed the user after F5 because `/refresh` used the cookie.
+Our incident SPA was on `app.company.com` and the API on `api.company.com`. We used SameSite and a specific CORS origin. The access token stayed in a service signal. After F5, the header still showed the user, because `/refresh` used the cookie.
 
 **Cross-question:** Put JWT in the SignalR query string?
 
 **Cross-answer:**
 
-Browsers cannot set headers on WebSocket easily, so people pass `?access_token=`. It leaks in logs. Keep it short-lived, never log the full URL, prefer a negotiate step that uses the header.
+Browsers can’t easily set headers on a WebSocket, so people pass `?access_token=` instead. The problem is it leaks into logs. Keep that token short-lived, never log the full URL, and prefer a negotiate step that uses the header.
 
 ---
 
@@ -183,11 +183,11 @@ Browsers cannot set headers on WebSocket easily, so people pass `?access_token=`
 
 **Answer:**
 
-- `POST /api/auth/login` — credentials → access + refresh (and set cookie if that is the design). Tenant from host/claim map, not from a free body field.
-- `POST /api/auth/refresh` — valid refresh → new pair; rotate DB row.
-- `POST /api/auth/logout` — revoke refresh row (this device) or all rows (logout everywhere).
+- `POST /api/auth/login` — takes credentials and returns access + refresh (and sets the cookie if that’s the design). The tenant comes from the host/claim mapping, not from a free field in the body.
+- `POST /api/auth/refresh` — takes a valid refresh token and returns a new pair; the DB row is rotated.
+- `POST /api/auth/logout` — revokes the refresh row (this device) or all rows (log out everywhere).
 
-Access token is **not** stored, so logout cannot kill it instantly. That is why access life is **short**. For instant kill you need a denylist (state) or wait for expiry.
+The access token is **not** stored, so logout can’t kill it instantly. That’s why the access token life is **short**. If you need an instant kill, you need a denylist (which is state), or you wait for it to expire.
 
 **Example:**
 
@@ -201,13 +201,13 @@ await db.RefreshTokens
 
 **Real-world example:**
 
-User clicked “log out all sessions” after a shared kiosk. We revoked refresh rows. Old access JWTs died within 10 minutes. Support accepted that window.
+A user clicked “log out all sessions” after using a shared kiosk. We revoked the refresh rows. The old access JWTs expired within 10 minutes. Support was fine with that window.
 
 **Cross-question:** Why not 8-hour access JWT and no refresh?
 
 **Cross-answer:**
 
-Stolen access token works for 8 hours with no revoke story. Short access + refresh is the usual compromise.
+Then a stolen access token works for 8 hours, and you have no way to revoke it. Short access tokens plus refresh is the usual compromise.
 
 ---
 
@@ -215,7 +215,7 @@ Stolen access token works for 8 hours with no revoke story. Short access + refre
 
 **Answer:**
 
-Login is phone + BCrypt password. We return a JWT (~20 minutes) and a refresh token: 64 random bytes, Base64, stored **as the raw string** in `RefreshTokens`, default about 1 hour. Refresh loads that row, checks `IsActive`, starts a transaction, sets `RevokedAt` on the old row, inserts a new refresh with the same `SessionId`, and issues a new JWT.
+Login is phone + BCrypt password. We return a JWT (~20 minutes) and a refresh token: 64 random bytes in Base64, stored **as the raw string** in `RefreshTokens`, with a default life of about 1 hour. On refresh, we load that row and check `IsActive`. Then we start a transaction, set `RevokedAt` on the old row, insert a new refresh token with the same `SessionId`, and issue a new JWT.
 
 **Example:**
 
@@ -233,13 +233,13 @@ var newRefresh = await GenerateRefreshToken(refreshToken.UserId, ipAddress, refr
 
 **Real-world example:**
 
-`AuthService.RefreshTokenAsync` does rotation. Logout only stamps `UserLoginActivity.LogoutTimeUtc`. It does **not** revoke refresh rows, so I would also revoke by `SessionId` on logout.
+`AuthService.RefreshTokenAsync` does the rotation. Logout only stamps `UserLoginActivity.LogoutTimeUtc`. It does **not** revoke the refresh rows, so I would also revoke by `SessionId` on logout.
 
 **Cross-question:** Do you hash the refresh token?
 
 **Cross-answer:**
 
-Not in the current table. I would hash it (SHA-256) and store `TokenHash`, like I described in Q2. If the DB leaks, raw tokens should not work.
+Not in the current table. I would hash it (SHA-256) and store a `TokenHash`, like I described in Q2. If the DB leaks, raw tokens should not work.
 
 ---
 
@@ -247,7 +247,7 @@ Not in the current table. I would hash it (SHA-256) and store `TokenHash`, like 
 
 **Answer:**
 
-The access JWT is still stateless. Each `/api` call: Bearer middleware validates signature and expiry, then `SessionMiddleware` fills `IUserSession` from claims. Repositories never look up the refresh row on a normal GET.
+The access JWT is still stateless. On each `/api` call, the Bearer middleware validates the signature and expiry. Then `SessionMiddleware` fills `IUserSession` from the claims. Repositories never look up the refresh row on a normal GET.
 
 **Example:**
 
@@ -260,22 +260,22 @@ if (parsedAccessType == UserAccessType.SuperAdmin)
 
 **Real-world example:**
 
-That is why a SuperAdmin can see all associations and an NR user cannot. The filter reads the same scoped session.
+That’s why a SuperAdmin can see all associations and an NR user cannot. The filter reads the same scoped session.
 
 **Cross-question:** `SaveToken = true` on JWT bearer?
 
 **Cross-answer:**
 
-It stores the token on `HttpContext` so SignalR or later middleware can read it. It is **not** a server-side session table for every API call.
+It stores the token on `HttpContext`, so SignalR or later middleware can read it. It is **not** a server-side session table checked on every API call.
 
 
 ---
 ## Additional Questions
 ### Q8. What happens if two requests get 401 at the same time?
-**Answer:** I do not want both to refresh independently. Angular should share one refresh request and queue/retry the failed API calls after a new access token is available.
+**Answer:** I don’t want both of them to refresh on their own. Angular should share one refresh request, queue the failed API calls, and retry them once the new access token is ready.
 
 ### Q9. Why rotate refresh tokens?
-**Answer:** After a refresh, the old token becomes invalid. If an old token is used again, I can detect possible token theft and revoke the token family.
+**Answer:** After a refresh, the old token stops working. If someone uses an old token again, I can spot possible token theft and revoke the whole token family.
 
 ### Q10. Can logout instantly invalidate an access JWT?
-**Answer:** Not if the access token is fully stateless. I normally keep it short-lived and revoke the refresh token. An immediate access-token denylist adds server-side state.
+**Answer:** Not if the access token is fully stateless. I usually keep it short-lived and revoke the refresh token. An instant denylist for access tokens adds server-side state.

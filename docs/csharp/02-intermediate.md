@@ -12,7 +12,7 @@ OOP, generics, LINQ, async. Talk like you use these at work.
 
 **Inheritance:** a child type reuses a parent.
 
-**Polymorphism:** I call the same method, the real type decides what runs.
+**Polymorphism:** I call the same method, and the real type decides what runs.
 
 **Abstraction:** I depend on `IRepository`, not `PostgresRepository`.
 
@@ -20,7 +20,7 @@ OOP, generics, LINQ, async. Talk like you use these at work.
 
 **Cross-answer:**
 
-Composition first — “has a”. Inheritance only when it is a real “is a”. Deep class trees get painful. Interfaces plus injected helpers scale better.
+I go with composition first — “has a”. I use inheritance only when it is a real “is a”. Deep class trees get painful. Interfaces plus injected helpers scale better.
 
 ---
 
@@ -28,7 +28,7 @@ Composition first — “has a”. Inheritance only when it is a real “is a”
 
 **Answer:**
 
-An **interface** is a promise. A type can have many.
+An **interface** is a promise. A type can implement many.
 
 An **abstract class** can hold shared code and fields. A class can have only one parent class.
 
@@ -44,7 +44,7 @@ Interfaces do not have instance fields. Abstract classes can have constructors a
 
 **Answer:**
 
-Generics keep types safe at compile time. `List<int>` stores ints. Old `ArrayList` stores `object` and boxes ints. I get fewer surprises and better speed.
+Generics keep types safe at compile time, so mistakes show up when I build. `List<int>` stores ints. Old `ArrayList` stores `object` and boxes ints. I get fewer surprises and better speed.
 
 **Cross-question:** What is a constraint?
 
@@ -60,7 +60,7 @@ Generics keep types safe at compile time. `List<int>` stores ints. Old `ArrayLis
 
 `IEnumerable` runs in memory.
 
-`IQueryable` is an expression tree. EF can turn it into SQL.
+`IQueryable` is an expression tree, which is a description of the query. EF can turn it into SQL.
 
 If I `ToList()` first, then filter, that filter is in memory. If I filter before `ToList()` on a query, it can become a SQL `WHERE`.
 
@@ -76,13 +76,13 @@ EF often cannot turn it into SQL and throws. Keep the filter simple, or filter i
 
 **Answer:**
 
-`Where` and `Select` do not run at once. They run when you loop, or `ToList`, or `Count`. If I change the source before that, results change. If I loop twice, I may hit the database twice.
+`Where` and `Select` do not run right away. They run when you loop, call `ToList`, or call `Count`. If I change the source before that, results change. If I loop twice, I may hit the database twice.
 
 **Cross-question:** Which LINQ methods run now?
 
 **Cross-answer:**
 
-`ToList`, `ToArray`, `First`, `Any`, `Count`, `Sum`. On EF, they send SQL now.
+`ToList`, `ToArray`, `First`, `Any`, `Count`, `Sum`. On EF, they send the SQL right away.
 
 ---
 
@@ -90,13 +90,13 @@ EF often cannot turn it into SQL and throws. Keep the filter simple, or filter i
 
 **Answer:**
 
-`await` means “pause this method until that work finishes, and free the thread for other work”. The compiler builds a state machine for you. I/O like HTTP or SQL does not need a thread sitting and waiting.
+`await` means “pause this method until that work finishes, and free the thread for other work”. The compiler builds a state machine for you, which is the code that remembers where to pick up again. I/O like HTTP or SQL does not need a thread sitting and waiting.
 
 **Cross-question:** Why is `async void` bad?
 
 **Cross-answer:**
 
-You cannot await it. Errors can crash the app or vanish. Only event handlers use `async void`. Everything else: `async Task`.
+You cannot await it. Errors can crash the app or just vanish. Only event handlers should use `async void`. Everything else gets `async Task`.
 
 ---
 
@@ -104,13 +104,13 @@ You cannot await it. Errors can crash the app or vanish. Only event handlers use
 
 **Answer:**
 
-You block a thread while the rest of the async method needs a thread to finish. In old ASP.NET / UI that can deadlock. In ASP.NET Core it is less common, but you still waste a thread-pool thread. Under load the app can stall.
+It happens when you block a thread while the rest of the async method needs a thread to finish. In old ASP.NET / UI that can deadlock. In ASP.NET Core it is less common, but you still waste a thread-pool thread. Under load the app can stall.
 
 **Cross-question:** Is `.GetAwaiter().GetResult()` OK in `Main`?
 
 **Cross-answer:**
 
-Console can use `async Task Main`. In libraries I keep async all the way. Blocking is a last resort.
+A console app can use `async Task Main` instead. In libraries I keep async all the way. Blocking is a last resort.
 
 ---
 
@@ -118,9 +118,9 @@ Console can use `async Task Main`. In libraries I keep async all the way. Blocki
 
 **Answer:**
 
-A **thread** is an OS worker. Expensive.
+A **thread** is an OS worker, and it is expensive.
 
-A **Task** is a piece of work. Waiting on I/O may use **no** thread.
+A **Task** is a piece of work. While it waits on I/O it may use **no** thread.
 
 **ValueTask** avoids extra Task objects when the result is often already there. Do not await a ValueTask twice.
 
@@ -128,7 +128,7 @@ A **Task** is a piece of work. Waiting on I/O may use **no** thread.
 
 **Cross-answer:**
 
-No. It is a timer. `Thread.Sleep` does block.
+No. It uses a timer. `Thread.Sleep` is the one that blocks.
 
 ---
 
@@ -142,7 +142,7 @@ A delegate is a type-safe “pointer to a method”. `Action` returns nothing. `
 
 **Cross-answer:**
 
-Anyone could set it to null or invoke it. Also: if the publisher lives long, remember to unsubscribe or you leak memory.
+Anyone could set it to null or invoke it. Also, if the publisher lives a long time, remember to unsubscribe, or you leak memory.
 
 ---
 
@@ -156,7 +156,7 @@ If a type holds files, connections, or other cleanup, it implements `IDisposable
 
 **Cross-answer:**
 
-No. That burns sockets. Use `IHttpClientFactory` and inject `HttpClient`. Do not `new HttpClient()` in a loop.
+No. That burns through sockets. Use `IHttpClientFactory` and inject `HttpClient`. Do not `new HttpClient()` in a loop.
 
 ---
 
@@ -170,7 +170,7 @@ No. That burns sockets. Use `IHttpClientFactory` and inject `HttpClient`. Do not
 
 **Cross-answer:**
 
-Auto is fine until you need extra logic.
+An auto-property is fine until you need extra logic.
 
 ---
 
@@ -178,7 +178,7 @@ Auto is fine until you need extra logic.
 
 **Answer:**
 
-A static method that looks like an instance method. First parameter has `this`. LINQ is built this way.
+It is a static method that looks like an instance method. The first parameter has `this`. LINQ is built this way.
 
 **Cross-question:** Can they touch private fields?
 
@@ -194,7 +194,7 @@ No. They are just static methods with nicer syntax. If the type already has the 
 
 `var` is decided at compile time. Same speed as writing the type.
 
-`dynamic` is decided at run time. Typos blow up later. I almost never use `dynamic`.
+`dynamic` is decided at run time. Typos only blow up later, when the code runs. I almost never use `dynamic`.
 
 **Cross-question:** Is `var` slower?
 
@@ -236,13 +236,13 @@ No. Use `SemaphoreSlim.WaitAsync()` for async.
 
 **Answer:**
 
-Stickers on code: `[HttpGet]`, `[Required]`, `[Authorize]`. They do nothing alone. Some framework must read them.
+They are like stickers on code: `[HttpGet]`, `[Required]`, `[Authorize]`. They do nothing on their own. Some framework has to read them.
 
 **Cross-question:** `[Obsolete]` vs deleting a method?
 
 **Cross-answer:**
 
-Obsolete warns callers first. Deleting is a breaking change.
+`[Obsolete]` warns callers first. Deleting is a breaking change.
 
 ---
 
@@ -250,13 +250,13 @@ Obsolete warns callers first. Deleting is a breaking change.
 
 **Answer:**
 
-One class split across files. Designers and source generators use this so your file is not overwritten.
+It is one class split across several files. Designers and source generators use this so your file is not overwritten.
 
 **Cross-question:** Why does EF like partial?
 
 **Cross-answer:**
 
-Generated file can be replaced. Your extra code stays in the other file.
+The generated file can be replaced, and your extra code stays safe in the other file.
 
 ---
 
@@ -298,7 +298,7 @@ The lambda can capture a variable. If you capture the loop index the old `for` w
 
 **Cross-answer:**
 
-Then callers depend on List methods and can mutate my data. If I later change to an array, I break them.
+Then callers depend on List methods and can change my data. If I later change to an array, I break them.
 
 ---
 
@@ -334,13 +334,13 @@ I rarely deep-copy whole graphs. I map to a new DTO instead.
 
 **Answer:**
 
-A real async EF call already frees the thread. Wrapping a sync EF call in `Task.Run` just moves blocking to the thread pool. Prefer true async APIs.
+A real async EF call already frees the thread. Wrapping a sync EF call in `Task.Run` just moves the blocking to the thread pool. I prefer true async APIs.
 
 **Cross-question:** When is `Task.Run` OK?
 
 **Cross-answer:**
 
-CPU-heavy work you do not want on the request thread, and you have no async API. Not for every SQL call.
+For CPU-heavy work you do not want on the request thread, when there is no async API. Not for every SQL call.
 
 ---
 
@@ -348,7 +348,7 @@ CPU-heavy work you do not want on the request thread, and you have no async API.
 
 **Answer:**
 
-`~MyClass()` runs some time after GC. I almost never write one. I use `Dispose` and `using`. Finalizers are easy to get wrong and slow GC.
+`~MyClass()` runs some time after GC. I almost never write one. I use `Dispose` and `using`. Finalizers are easy to get wrong and they slow down GC.
 
 **Cross-question:** What if I forget Dispose?
 
@@ -362,7 +362,7 @@ The resource can leak until GC, or forever if something still holds it. For file
 
 **Answer:**
 
-The runtime can reuse some string literals. I do not intern my own strings in app code. I just know two literals `"ok"` may be the same instance.
+The runtime can reuse some string literals. I do not intern my own strings in app code. I just know that two `"ok"` literals may be the same instance.
 
 **Cross-question:** Why not lock on a string?
 

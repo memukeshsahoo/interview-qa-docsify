@@ -8,21 +8,23 @@ Architecture, tenants, speed, security. Still use short sentences.
 
 **Answer:**
 
-Domain: entities, no project references.
+I split it into four layers.
 
-Application: use cases, interfaces. Depends on Domain only.
+Domain holds the entities. It has no project references.
 
-Infrastructure: EF, email. Implements those interfaces.
+Application holds the use cases and interfaces. It depends on Domain only.
 
-API: HTTP, auth, wires everything.
+Infrastructure holds things like EF and email. It implements those interfaces.
 
-Arrows point inward. Controllers do not hide SQL. Domain does not know EF.
+API handles HTTP and auth, and wires everything together.
+
+The arrows point inward. Controllers do not hide SQL. Domain does not know about EF.
 
 **Cross-question:** Where does `DbContext` live? Where do entities live?
 
 **Cross-answer:**
 
-Entities in Domain. `DbContext` in Infrastructure. Application talks through an interface or a port.
+Entities live in Domain. `DbContext` lives in Infrastructure. Application talks to it through an interface, or a port.
 
 ---
 
@@ -30,15 +32,15 @@ Entities in Domain. `DbContext` in Infrastructure. Application talks through an 
 
 **Answer:**
 
-Per tenant: strong walls, harder ops.
+A database per tenant gives you strong walls between customers, but operations are harder.
 
-Shared: easier ops, every query must filter, easier to leak.
+A shared database is easier to run, but every query must filter by tenant, so it is easier to leak data.
 
 **Cross-question:** If each tenant has a database, do entities need `TenantId`?
 
 **Cross-answer:**
 
-Usually no. The database *is* the tenant. I never trust a tenant id the browser sends. I resolve tenant from a claim or a known host map.
+Usually no. The database *is* the tenant. And I never trust a tenant id the browser sends. I resolve the tenant from a claim or from a known host map.
 
 ---
 
@@ -46,13 +48,13 @@ Usually no. The database *is* the tenant. I never trust a tenant id the browser 
 
 **Answer:**
 
-Knowing id `123` does not mean you may see it. I load the incident, then check tenant and permission. Else 404 or 403.
+It means someone reaches an object just by knowing or changing its id. Knowing id `123` does not mean you are allowed to see it. So I load the incident, then check the tenant and the permission. If the check fails, I return 404 or 403.
 
 **Cross-question:** Are GUIDs enough?
 
 **Cross-answer:**
 
-They are harder to guess. They are **not** permission.
+They are harder to guess. But they are **not** permission.
 
 ---
 
@@ -60,13 +62,13 @@ They are harder to guess. They are **not** permission.
 
 **Answer:**
 
-Kestrel reads HTTP → middleware → routing → authz → bind model → action → result → middleware on the way out.
+Kestrel reads the HTTP request → middleware → routing → authorization → model binding → action → result → middleware again on the way out.
 
 **Cross-question:** Can I read the body twice?
 
 **Cross-answer:**
 
-Not unless I enable buffering. I prefer model binding. If I log bodies, I redact secrets.
+Not unless I turn on buffering. I prefer to let model binding read it. If I log bodies, I redact secrets first.
 
 ---
 
@@ -74,13 +76,13 @@ Not unless I enable buffering. I prefer model binding. If I log bodies, I redact
 
 **Answer:**
 
-Too many blocked threads: `.Result`, `Wait()`, `Thread.Sleep`, sync IO. Then nothing is left to finish the tasks those threads wait on. The site feels dead.
+It happens when too many threads are blocked, for example by `.Result`, `Wait()`, `Thread.Sleep`, or sync IO. Then no free thread is left to finish the tasks those blocked threads are waiting on. The site feels dead.
 
 **Cross-question:** How do you spot it?
 
 **Cross-answer:**
 
-Counters, traces, sudden latency. I search for sync-over-async and huge EF loads on the request.
+I look at counters, traces, and sudden jumps in latency. Then I search the code for sync-over-async and for huge EF loads inside the request.
 
 ---
 
@@ -88,13 +90,13 @@ Counters, traces, sudden latency. I search for sync-over-async and huge EF loads
 
 **Answer:**
 
-`ExecuteUpdate` writes SQL without tracking each row. Fast for bulk. You skip per-entity events. If you need domain events, load and save the normal way.
+`ExecuteUpdate` sends the SQL directly without tracking each row, so it is fast for bulk changes. The catch is you skip per-entity events. If I need domain events, I load the entities and save them the normal way.
 
 **Cross-question:** Raw SQL?
 
 **Cross-answer:**
 
-I use LINQ/EF APIs. I do not paste SQL strings in app code when the team forbids it.
+I use LINQ and the EF APIs. I do not paste SQL strings into app code when the team forbids it.
 
 ---
 
@@ -102,13 +104,13 @@ I use LINQ/EF APIs. I do not paste SQL strings in app code when the team forbids
 
 **Answer:**
 
-CQRS: split read and write. MediatR: in-process messages and pipelines. Nice in a large app. Too much for five CRUD endpoints.
+CQRS means splitting reads from writes. MediatR gives you in-process messages and pipelines. Both are nice in a large app. For five CRUD endpoints, they are too much.
 
 **Cross-question:** Is CQRS event sourcing?
 
 **Cross-answer:**
 
-No. Event sourcing stores events as the source of truth. Most teams never need that.
+No. Event sourcing stores the events themselves as the source of truth. Most teams never need that.
 
 ---
 
@@ -116,13 +118,13 @@ No. Event sourcing stores events as the source of truth. Most teams never need t
 
 **Answer:**
 
-Save the business row and a “please publish this” row in the **same** database transaction. A worker publishes later. You do not get “saved but message lost”.
+I save the business row and a “please publish this” row in the **same** database transaction. A worker publishes the message later. That way you never get “saved, but the message was lost”.
 
 **Cross-question:** Publish to the queue then save EF?
 
 **Cross-answer:**
 
-If save fails, you already told the world a lie. Dual write without an outbox is a classic incident.
+If the save fails, you have already told the world a lie. A dual write without an outbox is a classic cause of incidents.
 
 ---
 
@@ -130,13 +132,13 @@ If save fails, you already told the world a lie. Dual write without an outbox is
 
 **Answer:**
 
-A client sends a key with a POST. I store it per tenant. Retrying the same key does not create a second payment.
+The client sends a key with a POST. I store that key per tenant. If the client retries with the same key, we do not create a second payment.
 
 **Cross-question:** Are all HTTP methods safe to retry?
 
 **Cross-answer:**
 
-GET/PUT/DELETE are meant to be. POST is not, unless I make it so. Timeout + retry on POST is a double-charge bug.
+GET, PUT and DELETE are meant to be. POST is not, unless I make it so. A timeout plus a retry on POST is how you get a double-charge bug.
 
 ---
 
@@ -144,13 +146,13 @@ GET/PUT/DELETE are meant to be. POST is not, unless I make it so. Timeout + retr
 
 **Answer:**
 
-Cookies and some tokens are encrypted with a key ring. All servers must share those keys or users bounce and get logged out.
+Cookies and some tokens are encrypted with a key ring. All servers must share those keys. If they don't, users bounce between servers and get logged out.
 
 **Cross-question:** Public folder for the key ring?
 
 **Cross-answer:**
 
-No. Keys are secrets.
+No. The keys are secrets.
 
 ---
 
@@ -158,13 +160,13 @@ No. Keys are secrets.
 
 **Answer:**
 
-A factory reads the current tenant (claim or validated host) and opens `tenant_{slug}` from a catalog. If tenant is missing, we do not query.
+A factory reads the current tenant, from a claim or a validated host, and opens `tenant_{slug}` using a catalog. If the tenant is missing, we do not run the query.
 
 **Cross-question:** Host header as tenant — safe?
 
 **Cross-answer:**
 
-Only if I map host → tenant in a trusted list. I do not stick the raw host into a connection string. The client never sends a connection string.
+Only if I map host → tenant from a trusted list. I never put the raw host into a connection string. And the client never sends a connection string.
 
 ---
 
@@ -172,13 +174,13 @@ Only if I map host → tenant in a trusted list. I do not stick the raw host int
 
 **Answer:**
 
-Logs: events. Metrics: numbers like request time. Traces: the path through API → EF → HTTP. I join them with a trace id. I do not log every SQL in production.
+Logs are events. Metrics are numbers, like request time. Traces show the path a request takes through API → EF → HTTP. I tie all three together with a trace id. I do not log every SQL statement in production.
 
 **Cross-question:** Why not log all SQL?
 
 **Cross-answer:**
 
-Volume, personal data in parameters, extra cost. Slow-query logging is enough.
+Too much volume, personal data in the parameters, and extra cost. Logging slow queries is enough.
 
 ---
 
@@ -186,13 +188,13 @@ Volume, personal data in parameters, extra cost. Slow-query logging is enough.
 
 **Answer:**
 
-JIT compiles at run time. AOT compiles ahead: faster start, stricter (less reflection). Most business APIs still JIT. Know that old reflection tricks can break AOT.
+JIT compiles the code at run time. AOT compiles it ahead of time. That gives faster startup, but it is stricter, with less reflection allowed. Most business APIs still use JIT. The thing to know is that old reflection tricks can break under AOT.
 
 **Cross-question:** What breaks first on AOT?
 
 **Cross-answer:**
 
-Dynamic `Assembly.Load`, some JSON without source gen, emit.
+Dynamic `Assembly.Load`, some JSON code that doesn't use source generation, and emit.
 
 ---
 
@@ -200,13 +202,13 @@ Dynamic `Assembly.Load`, some JSON without source gen, emit.
 
 **Answer:**
 
-Stable codes like `incidents.read`. Roles are bundles. Object checks still happen on the server. The UI only hides buttons.
+I use stable codes like `incidents.read`. Roles are just bundles of those codes. Object-level checks still happen on the server. The UI only hides buttons.
 
 **Cross-question:** Permissions in the JWT or look up each time?
 
 **Cross-answer:**
 
-JWT is faster and can be stale. Database is fresh and heavier. Hybrid: role in token, dangerous actions checked again.
+The JWT is faster but can go stale. The database is always fresh but heavier. I go hybrid: role in the token, and dangerous actions get checked again.
 
 ---
 
@@ -214,13 +216,13 @@ JWT is faster and can be stale. Database is fresh and heavier. Hybrid: role in t
 
 **Answer:**
 
-Reproduce. Measure: network, CPU, SQL, JSON? Count SQL. Fix N+1 or over-select. Measure again.
+First I reproduce it. Then I measure: is it network, CPU, SQL, or JSON? I count the SQL queries. I fix N+1 or over-selecting. Then I measure again.
 
 **Cross-question:** Cache first?
 
 **Cross-answer:**
 
-Not if the query is wrong or the key misses tenant. Fix the query first.
+Not if the query is wrong or the cache key is missing the tenant. I fix the query first.
 
 ---
 
@@ -228,13 +230,13 @@ Not if the query is wrong or the key misses tenant. Fix the query first.
 
 **Answer:**
 
-REST: easy for browsers. gRPC: fast service-to-service, protobuf. GraphQL: flexible queries, more moving parts, auth per field.
+REST is easy for browsers. gRPC is fast for service-to-service calls and uses protobuf. GraphQL gives flexible queries, but has more moving parts and needs auth per field.
 
 **Cross-question:** Replace REST with gRPC for Angular?
 
 **Cross-answer:**
 
-Usually no. Browser tools, files, and HTTP status still fit REST/JSON.
+Usually no. Browser tools, file handling, and HTTP status codes still fit REST/JSON better.
 
 ---
 
@@ -242,13 +244,13 @@ Usually no. Browser tools, files, and HTTP status still fit REST/JSON.
 
 **Answer:**
 
-A singleton holds a scoped service. That scoped service becomes a singleton by accident. `DbContext` shared across requests is a famous case. The DI container can warn you.
+It's when a singleton holds on to a scoped service. That scoped service then becomes a singleton by accident. A `DbContext` shared across requests is the famous case. The DI container can warn you about it.
 
 **Cross-question:** How do you use a scoped service inside a singleton?
 
 **Cross-answer:**
 
-Inject `IServiceScopeFactory`, create a scope per operation, dispose it.
+I inject `IServiceScopeFactory`, create a scope for each operation, and dispose it when done.
 
 ---
 
@@ -256,13 +258,13 @@ Inject `IServiceScopeFactory`, create a scope per operation, dispose it.
 
 **Answer:**
 
-TLS, path routing, more than one app, rate limits. Kestrel still runs the app. I do not expose Kestrel raw on the internet without a plan.
+For TLS, path routing, running more than one app, and rate limits. Kestrel still runs the app. I don't expose raw Kestrel to the internet without a plan.
 
 **Cross-question:** Forwarded headers?
 
 **Cross-answer:**
 
-So the app knows HTTPS and the real client IP. I only trust proxies I own, not any `X-Forwarded-*` from the world.
+They let the app know the request was HTTPS and what the real client IP is. I only trust proxies I own, not any `X-Forwarded-*` header coming from the outside world.
 
 ---
 
@@ -270,13 +272,13 @@ So the app knows HTTPS and the real client IP. I only trust proxies I own, not a
 
 **Answer:**
 
-No tokens in URLs. No connection strings in 500 responses. Exception middleware sends a generic message. I log ids, not payloads with passwords.
+No tokens in URLs. No connection strings in 500 responses. The exception middleware sends back a generic message. I log ids, not payloads that contain passwords.
 
 **Cross-question:** Dev vs prod exception pages?
 
 **Cross-answer:**
 
-Developer exception page is local only. Prod uses ProblemDetails without stack traces.
+The developer exception page is for local only. Production uses ProblemDetails without stack traces.
 
 ---
 
@@ -284,13 +286,13 @@ Developer exception page is local only. Prod uses ProblemDetails without stack t
 
 **Answer:**
 
-Large models take time to start. Compiled models help startup. I mention it if the app has many entities and slow boot. Not the first fix for a slow page.
+Large models take time to load at startup. Compiled models help with that. I bring it up when the app has many entities and a slow boot. It is not the first fix for a slow page.
 
 **Cross-question:** Does this replace indexing?
 
 **Cross-answer:**
 
-No. Indexes are a database thing. Different problem.
+No. Indexes are a database thing. It's a different problem.
 
 ---
 
@@ -298,13 +300,13 @@ No. Indexes are a database thing. Different problem.
 
 **Answer:**
 
-A scoped `IUserContext` filled from claims after auth. It has UserId, Tenant, permissions. Fail closed if empty on a protected request. No static `CurrentUser` on a singleton.
+I'd make a scoped `IUserContext` that gets filled from the claims after auth. It holds UserId, Tenant, and permissions. If it is empty on a protected request, it fails closed. No static `CurrentUser` sitting on a singleton.
 
 **Cross-question:** Async and user context?
 
 **Cross-answer:**
 
-`AsyncLocal` can work but is easy to leak across requests if you get it wrong. Scoped + HttpContext is clearer for web.
+`AsyncLocal` can work, but it is easy to leak data across requests if you get it wrong. For web apps, scoped services plus HttpContext are clearer.
 
 ---
 
@@ -312,13 +314,13 @@ A scoped `IUserContext` filled from claims after auth. It has UserId, Tenant, pe
 
 **Answer:**
 
-If work arrives faster than we can do it, we must slow the producer or drop with a plan. Bounded channels, 429, queue limits. Infinite in-memory queues will take the process down.
+If work arrives faster than we can handle it, we have to slow down the producer, or drop work with a plan. Tools for that are bounded channels, 429 responses, and queue limits. An unlimited in-memory queue will eventually take the process down.
 
 **Cross-question:** Hangfire queue growing forever?
 
 **Cross-answer:**
 
-I alert on queue length and failed jobs. I do not only add more servers with no limit.
+I set alerts on queue length and failed jobs. I don't just keep adding servers with no limit.
 
 ---
 
@@ -326,13 +328,13 @@ I alert on queue length and failed jobs. I do not only add more servers with no 
 
 **Answer:**
 
-Same migrations on every tenant database. A catalog tracks version. Rollout is a plan: one tenant, then batches. I do not invent a special schema per customer.
+Every tenant database gets the same migrations. A catalog tracks which version each one is on. Rollout is planned: one tenant first, then batches. I don't invent a special schema per customer.
 
 **Cross-question:** One tenant needs a custom column?
 
 **Cross-answer:**
 
-That is a product smell. Prefer a safe extension (JSON metadata) over a snowflake schema, if the project already has that pattern.
+That is a product smell. I'd prefer a safe extension, like JSON metadata, over a one-off snowflake schema, if the project already uses that pattern.
 
 ---
 
@@ -340,13 +342,13 @@ That is a product smell. Prefer a safe extension (JSON metadata) over a snowflak
 
 **Answer:**
 
-Cookies, JWT bearer, maybe API keys. One app can have more than one. A browser site might use cookies. A SPA might use bearer. I do not mix them by accident on the same endpoint without thinking.
+A scheme is how the app identifies the caller: cookies, JWT bearer, maybe API keys. One app can have more than one. A browser site might use cookies, and a SPA might use bearer tokens. I don't mix them on the same endpoint by accident without thinking it through.
 
 **Cross-question:** `[Authorize(AuthenticationSchemes = "...")]`?
 
 **Cross-answer:**
 
-Picks which scheme that endpoint accepts. Default scheme is not always what you think if you registered two.
+It picks which scheme that endpoint accepts. If you registered two, the default scheme is not always the one you think.
 
 ---
 
@@ -354,13 +356,13 @@ Picks which scheme that endpoint accepts. Default scheme is not always what you 
 
 **Answer:**
 
-Two users, two tenants. User A’s token must not read B’s id. Automated test. Also try a guessed id. This is not optional.
+I set up two users in two tenants. User A’s token must not be able to read B’s id. That is an automated test. I also try a guessed id. This is not optional.
 
 **Cross-question:** Is a manual click enough?
 
 **Cross-answer:**
 
-No. Someone will forget on the next feature. Tests stay.
+No. Someone will forget to check on the next feature. Tests stay.
 
 ---
 
@@ -368,13 +370,13 @@ No. Someone will forget on the next feature. Tests stay.
 
 **Answer:**
 
-When an NR user books, we start a database transaction. We lock the wallet with Postgres `FOR UPDATE`. Available money is `Balance` minus active holds. If it is enough, we insert a `HoldBalance` and a Hold ledger row. We do **not** subtract `Balance` yet. The money is reserved. When the job is completed, `ReleasePayment` debits the user and splits to the service provider, platform, association, and verifier.
+When an NR user books, we start a database transaction. We lock the wallet with Postgres `FOR UPDATE`. The available money is `Balance` minus active holds. If that is enough, we insert a `HoldBalance` and a Hold ledger row. We do **not** subtract from `Balance` yet. The money is just reserved. When the job is completed, `ReleasePayment` debits the user and splits the money to the service provider, platform, association, and verifier.
 
 **Cross-question:** Why not debit immediately?
 
 **Cross-answer:**
 
-The booking can still be cancelled while it is under discussion. A hold keeps the amount aside without paying the provider yet.
+Because the booking can still be cancelled while it is under discussion. A hold keeps the amount aside without paying the provider yet.
 
 ---
 
@@ -382,13 +384,13 @@ The booking can still be cancelled while it is under discussion. A hold keeps th
 
 **Answer:**
 
-On create booking we `SELECT ... FOR UPDATE` that wallet row, so the second request waits. After the first hold is saved, the second sees a smaller available balance and fails with insufficient funds. That is pessimistic locking.
+When creating a booking we `SELECT ... FOR UPDATE` that wallet row, so the second request has to wait. After the first hold is saved, the second request sees a smaller available balance and fails with insufficient funds. That is pessimistic locking.
 
 **Cross-question:** Does quotation accept use the same lock?
 
 **Cross-answer:**
 
-Not today. Accept quotation checks available balance without `FOR UPDATE`. Two accepts could race. I would reuse the same lock, or a unique idempotency index.
+Not today. Accepting a quotation checks the available balance without `FOR UPDATE`, so two accepts could race. I would reuse the same lock, or add a unique idempotency index.
 
 ---
 
@@ -396,13 +398,13 @@ Not today. Accept quotation checks available balance without `FOR UPDATE`. Two a
 
 **Answer:**
 
-Serilog request logging is good: method, path, status, time. I would turn **off** `EnableSensitiveDataLogging` and `EnableDetailedErrors` outside Development. Those print SQL parameter values, which can include phones and amounts. Session middleware logging every user id at Information is noisy in production; Warning is enough.
+Serilog request logging is good as it is: method, path, status, time. I would turn **off** `EnableSensitiveDataLogging` and `EnableDetailedErrors` outside Development. Those print SQL parameter values, which can include phone numbers and amounts. Also, the session middleware logs every user id at Information level. That is noisy in production; Warning is enough.
 
 **Cross-question:** Log the JWT on 401?
 
 **Cross-answer:**
 
-Never. Log user id and path. Tokens and passwords stay out.
+Never. I log the user id and the path. Tokens and passwords stay out.
 
 ---
 
@@ -410,13 +412,13 @@ Never. Log user id and path. Tokens and passwords stay out.
 
 **Answer:**
 
-`ReleasePayment` runs in a transaction. User wallet `Balance` goes down by the hold total. Service provider gets total minus platform, association, and verifier fees. SuperAdmin wallet gets platform fee. Association and verifier wallets get their fees if present. Holds become Released. Each split has its own ledger row and key.
+`ReleasePayment` runs in a transaction. The user wallet `Balance` goes down by the hold total. The service provider gets the total minus the platform, association, and verifier fees. The SuperAdmin wallet gets the platform fee. The association and verifier wallets get their fees, if they are present. The holds become Released. Each split has its own ledger row and key.
 
 **Cross-question:** What if SaveChanges fails in the middle?
 
 **Cross-answer:**
 
-The explicit transaction rolls back, so no half payout. After commit we queue PDF report jobs. Those can fail without undoing money, which is acceptable as “eventually generate the receipt”.
+The explicit transaction rolls back, so there is no half payout. After the commit we queue the PDF report jobs. Those can fail without undoing any money, which is acceptable as “eventually generate the receipt”.
 
 ---
 
@@ -424,13 +426,13 @@ The explicit transaction rolls back, so no half payout. After commit we queue PD
 
 **Answer:**
 
-In `ProcessSubscriptionInternal` we use `ExecuteUpdateAsync`: update the payer wallet only if `Balance >= total`. If zero rows updated, we fail. Then we write ledger rows, the subscription, and the payment log in the same transaction.
+In `ProcessSubscriptionInternal` we use `ExecuteUpdateAsync` to update the payer wallet only if `Balance >= total`. If zero rows were updated, we fail. Then we write the ledger rows, the subscription, and the payment log in the same transaction.
 
 **Cross-question:** Why `ExecuteUpdate` instead of load-and-save?
 
 **Cross-answer:**
 
-Load-and-save can overwrite a concurrent top-up. The SQL `WHERE Balance >= amount` is one atomic decrement. No rowversion on Wallet, so this pattern matters.
+Load-and-save can overwrite a top-up that happened at the same time. The SQL `WHERE Balance >= amount` makes it one atomic decrement. There is no rowversion on Wallet, so this pattern matters.
 
 ---
 
@@ -438,13 +440,13 @@ Load-and-save can overwrite a concurrent top-up. The SQL `WHERE Balance >= amoun
 
 **Answer:**
 
-Today `verify` captures the payment, then credits the wallet in a second step, and it picks the latest payment log with no Razorpay payment id — not filtered by user. If capture works and wallet credit fails, retry can credit twice. I would: match the log by order id, unique constraint on payment id, credit inside a transaction, and add a webhook as the source of truth.
+Today `verify` captures the payment, then credits the wallet in a second step. It also picks the latest payment log that has no Razorpay payment id, and it doesn't filter by user. If the capture works but the wallet credit fails, a retry can credit twice. I would match the log by order id, put a unique constraint on the payment id, do the credit inside a transaction, and add a webhook as the source of truth.
 
 **Cross-question:** Why manual capture?
 
 **Cross-answer:**
 
-Orders are created with `payment_capture = 0`. We capture only after the client calls verify. That is fine if verify is honest. A webhook is safer when the app dies after capture.
+Orders are created with `payment_capture = 0`. We capture only after the client calls verify. That's fine as long as verify is honest. A webhook is safer if the app dies right after capture.
 
 ---
 
@@ -452,22 +454,22 @@ Orders are created with `payment_capture = 0`. We capture only after the client 
 
 **Answer:**
 
-TickerQ. Job methods have `[TickerFunction]`. We enqueue with `ITimeTickerManager`. The store is EF tables on the same Postgres. Max concurrency is 4. Dashboard is `/tickerq`. Jobs create their own DI scope so they do not reuse a request DbContext.
+TickerQ. Job methods are marked with `[TickerFunction]`. We enqueue them with `ITimeTickerManager`. The store is EF tables in the same Postgres database. Max concurrency is 4. The dashboard is at `/tickerq`. Each job creates its own DI scope, so it doesn't reuse a request's DbContext.
 
 **Cross-question:** What if the API restarts?
 
 **Cross-answer:**
 
-Missed tickers can be cancelled on restart (`CancelMissedTickersOnApplicationRestart`). Document expiry currently schedules **another** daily job on every startup, so I would make that schedule idempotent.
+Missed tickers can be cancelled on restart (`CancelMissedTickersOnApplicationRestart`). Right now, document expiry schedules **another** daily job on every startup, so I would make that schedule idempotent.
 
 
 ---
 ## Additional Questions
 ### Q33. What is idempotency in an API?
-**Answer:** Repeating the same request should not create the same business effect twice. For payments or wallet operations I use a unique business key/idempotency key and enforce it in the database.
+**Answer:** If the same request is repeated, it should not cause the same business effect twice. For payments or wallet operations, I use a unique business key or idempotency key and enforce it in the database.
 
 ### Q34. Why is an outbox useful?
 **Answer:** If I save a database change and publish an event separately, one can succeed while the other fails. The outbox stores the event in the same database transaction, and a worker publishes it later.
 
 ### Q35. How do you handle concurrency in a wallet?
-**Answer:** I use a database transaction and lock or concurrency control around the balance/ledger operation. I also make the business transaction id unique so retries cannot double-charge.
+**Answer:** I wrap the balance and ledger operation in a database transaction, with a lock or concurrency control around it. I also make the business transaction id unique, so retries can't double-charge.

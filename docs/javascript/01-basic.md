@@ -1,6 +1,6 @@
 # JavaScript — Basic
 
-The browser runs JS. TypeScript is extra types on top. Interviews still ask this.
+The browser runs JS. TypeScript adds types on top. Interviews still ask these basics.
 
 ---
 
@@ -8,13 +8,13 @@ The browser runs JS. TypeScript is extra types on top. Interviews still ask this
 
 **Answer:**
 
-JavaScript is what the browser runs. TypeScript adds types, then those types are erased. If types are wrong or you use `any`, you still get runtime errors.
+JavaScript is what the browser actually runs. TypeScript adds types on top, and those types are erased when it compiles. So if the types are wrong, or you use `any`, you can still get runtime errors.
 
 **Cross-question:** Is TypeScript a runtime?
 
 **Cross-answer:**
 
-No. After compile, it is JS.
+No. After it compiles, it is just JS.
 
 ---
 
@@ -22,17 +22,17 @@ No. After compile, it is JS.
 
 **Answer:**
 
-`var`: function scope, old, avoid.
+`var`: function scope. It is the old way, so I avoid it.
 
-`let`: block scope, can reassign.
+`let`: block scope, and you can reassign it.
 
-`const`: block scope, cannot reassign the binding. The object inside can still change.
+`const`: block scope, and you cannot reassign the binding. But the object it points to can still change.
 
 **Cross-question:** Why does `const user = {}; user.name = 'A'` work?
 
 **Cross-answer:**
 
-`const` locks the variable, not the object. I use `Object.freeze` only if I really need a shallow freeze.
+`const` locks the variable, not the object. If I really need to stop changes, I use `Object.freeze`, and that is only a shallow freeze.
 
 ---
 
@@ -40,13 +40,13 @@ No. After compile, it is JS.
 
 **Answer:**
 
-Primitives: string, number, boolean, null, undefined, symbol, bigint. Everything else is an object, including arrays and functions. `===` on objects is “same instance”.
+The primitives are string, number, boolean, null, undefined, symbol and bigint. Everything else is an object, including arrays and functions. When you use `===` on objects, it checks if they are the same instance.
 
 **Cross-question:** `typeof null`?
 
 **Cross-answer:**
 
-It says `'object'`. Old bug. I check `=== null`.
+It returns `'object'`. That is an old bug in the language. So I check `=== null` instead.
 
 ---
 
@@ -54,13 +54,13 @@ It says `'object'`. Old bug. I check `=== null`.
 
 **Answer:**
 
-`==` converts types. `'0' == 0` is true. `===` does not convert. I use `===`.
+`==` converts types before comparing, so `'0' == 0` is true. `===` does not convert anything. I use `===`.
 
 **Cross-question:** `null == undefined`?
 
 **Cross-answer:**
 
-True with `==`. Some teams use `== null` to mean both. I still prefer to be explicit if the team likes that.
+That is true with `==`. Some teams use `== null` on purpose to check for both. I still prefer to be explicit, unless the team likes that style.
 
 ---
 
@@ -68,13 +68,13 @@ True with `==`. Some teams use `== null` to mean both. I still prefer to be expl
 
 **Answer:**
 
-Falsy: `false`, `0`, `''`, `null`, `undefined`, `NaN`. Empty array `[]` and object `{}` are truthy.
+The falsy values are `false`, `0`, `''`, `null`, `undefined` and `NaN`. An empty array `[]` and an empty object `{}` are truthy.
 
 **Cross-question:** `if (arr)` on an empty array?
 
 **Cross-answer:**
 
-True. Check `arr.length`.
+It is true. So I check `arr.length` instead.
 
 ---
 
@@ -82,13 +82,13 @@ True. Check `arr.length`.
 
 **Answer:**
 
-`function add() {}` is hoisted. Arrows are not, and they keep `this` from outside.
+`function add() {}` is hoisted, so you can call it before its line. Arrows are not, and they keep the `this` from the outer scope.
 
 **Cross-question:** When do arrows hurt?
 
 **Cross-answer:**
 
-As object methods that need their own `this`. As constructors. `new` is not for arrows.
+When you use them as object methods that need their own `this`. Also as constructors, because you cannot use `new` with an arrow.
 
 ---
 
@@ -102,15 +102,15 @@ It depends on **how** you call the function.
 
 Plain `fn()` → `undefined` in strict mode.
 
-`new Fn()` → new object.
+`new Fn()` → the new object.
 
-Arrow → outer `this`.
+Arrow → the outer `this`.
 
 **Cross-question:** Callback lost `this`?
 
 **Cross-answer:**
 
-I passed `obj.method` without calling it. Fix: `bind`, or `() => obj.method()`.
+That happens when I pass `obj.method` without calling it. The fix is `bind`, or `() => obj.method()`.
 
 ---
 
@@ -118,13 +118,13 @@ I passed `obj.method` without calling it. Fix: `bind`, or `() => obj.method()`.
 
 **Answer:**
 
-`map`, `filter`, `reduce`, `find`, `some`, `every`, `slice` (copy), `splice` (mutates). In Angular state I prefer copy, not mutate.
+`map`, `filter`, `reduce`, `find`, `some`, `every`, `slice` (makes a copy) and `splice` (changes the array). For Angular state, I prefer copying over mutating.
 
 **Cross-question:** `map` vs `forEach`?
 
 **Cross-answer:**
 
-`map` returns a new array. `forEach` is for side effects. I do not `map` and ignore the result.
+`map` returns a new array. `forEach` is for side effects. I never use `map` and then ignore the result.
 
 ---
 
@@ -132,13 +132,13 @@ I passed `obj.method` without calling it. Fix: `bind`, or `() => obj.method()`.
 
 **Answer:**
 
-Shallow: `{ ...obj }`. Nested objects are still shared. Deep: `structuredClone` in modern browsers. JSON copy drops dates and functions.
+For a shallow copy I use `{ ...obj }`, but nested objects are still shared. For a deep copy I use `structuredClone` in modern browsers. A JSON copy turns dates into strings and drops functions.
 
 **Cross-question:** Destructuring rest to drop password?
 
 **Cross-answer:**
 
-`const { password, ...safe } = user` — then I never log `password`.
+`const { password, ...safe } = user` — and then I never log `password`.
 
 ---
 
@@ -146,13 +146,13 @@ Shallow: `{ ...obj }`. Nested objects are still shared. Deep: `structuredClone` 
 
 **Answer:**
 
-`` `Hello ${name}` ``. `function f(x = 1)`.
+A template string looks like `` `Hello ${name}` ``. A default parameter looks like `function f(x = 1)`.
 
 **Cross-question:** Tagged templates?
 
 **Cross-answer:**
 
-A function in front of the string. Used by some libraries. I rarely write my own.
+It is a function placed in front of the template string. Some libraries use them. I rarely write my own.
 
 ---
 
@@ -160,13 +160,13 @@ A function in front of the string. Used by some libraries. I rarely write my own
 
 **Answer:**
 
-No functions, no `undefined`, dates become strings, BigInt fails, cycles throw. Do not `eval` JSON.
+JSON has no functions and no `undefined`. Dates become strings, BigInt fails, and circular references throw. And never use `eval` to parse JSON.
 
 **Cross-question:** Revive dates?
 
 **Cross-answer:**
 
-A reviver in `JSON.parse`, or map after. ISO strings are not Date objects by magic.
+I use a reviver in `JSON.parse`, or map the values afterwards. ISO strings do not turn into Date objects by magic.
 
 ---
 
@@ -174,13 +174,13 @@ A reviver in `JSON.parse`, or map after. ISO strings are not Date objects by mag
 
 **Answer:**
 
-`catch` only sees `await` or sync throws. A bare `fetch().then()` reject is unhandled unless I `.catch` or `await`.
+`catch` only sees errors from `await` or from sync code that throws. A bare `fetch().then()` that rejects is unhandled unless I add `.catch` or `await` it.
 
 **Cross-question:** Throw a string?
 
 **Cross-answer:**
 
-I throw `Error` so I get a stack.
+No, I throw an `Error` so I get a stack trace.
 
 ---
 
@@ -188,13 +188,13 @@ I throw `Error` so I get a stack.
 
 **Answer:**
 
-`import`/`export` is ESM. `require` is old Node CommonJS. Browsers use ESM or a bundler.
+`import`/`export` is ESM, the standard module system. `require` is the older CommonJS style from Node. Browsers use ESM or a bundler.
 
 **Cross-question:** Default vs named export?
 
 **Cross-answer:**
 
-Named is easier to search and rename. Teams often prefer named only.
+Named exports are easier to search for and rename. A lot of teams use named exports only.
 
 ---
 
@@ -202,9 +202,9 @@ Named is easier to search and rename. Teams often prefer named only.
 
 **Answer:**
 
-Not defined: variable never declared → `ReferenceError`.
+Not defined: the variable was never declared, so you get a `ReferenceError`.
 
-`undefined`: declared, no value, or missing property.
+`undefined`: it was declared but has no value, or the property is missing.
 
 `null`: I set it on purpose.
 
@@ -212,7 +212,7 @@ Not defined: variable never declared → `ReferenceError`.
 
 **Cross-answer:**
 
-Stops on null/undefined and returns undefined. `??` is “if null or undefined, use this”. It does not treat `0` as empty.
+It stops at the first null or undefined and returns undefined. `??` means “if this is null or undefined, use this other value”. It does not treat `0` as empty.
 
 ---
 
@@ -220,13 +220,13 @@ Stops on null/undefined and returns undefined. `??` is “if null or undefined, 
 
 **Answer:**
 
-JS runs one thing at a time. Sync code first. Then microtasks (`Promise.then`). Then timers and events. That is why `Promise.then` can run before `setTimeout(0)`.
+JS runs one thing at a time. Sync code runs first. Then microtasks, like `Promise.then`. Then timers and events. That is why `Promise.then` can run before `setTimeout(0)`.
 
 **Cross-question:** Is `setTimeout(fn, 0)` now?
 
 **Cross-answer:**
 
-No. After the current stack, and maybe later if the tab is busy.
+No. It runs after the current stack is done, and maybe later if the tab is busy.
 
 ---
 
@@ -234,13 +234,13 @@ No. After the current stack, and maybe later if the tab is busy.
 
 **Answer:**
 
-It fights Angular, breaks tests and SSR, and `innerHTML` is an XSS risk. I bind in the template or use `@ViewChild` if I must.
+It works against Angular, it breaks tests and SSR, and using `innerHTML` is an XSS risk. I bind in the template, or use `@ViewChild` if I really have to.
 
 **Cross-question:** What is the DOM?
 
 **Cross-answer:**
 
-The tree of HTML nodes the browser keeps. JS can change it. Angular already does that for you.
+It is the tree of HTML nodes the browser keeps in memory. JS can change it. Angular already does that for you.
 
 ---
 
@@ -248,13 +248,13 @@ The tree of HTML nodes the browser keeps. JS can change it. Angular already does
 
 **Answer:**
 
-“Not a number”. `Number('abc')` is `NaN`. `NaN === NaN` is false. I use `Number.isNaN`.
+It means “Not a Number”. `Number('abc')` gives `NaN`. Also, `NaN === NaN` is false. So I check with `Number.isNaN`.
 
 **Cross-question:** `isNaN('hello')`?
 
 **Cross-answer:**
 
-Old `isNaN` converts first and says true. `Number.isNaN` is stricter. I use that.
+The old `isNaN` converts the value first, so it says true. `Number.isNaN` is stricter, so I use that.
 
 ---
 
@@ -262,13 +262,13 @@ Old `isNaN` converts first and says true. `Number.isNaN` is stricter. I use that
 
 **Answer:**
 
-`'string'`, `'number'`, `'boolean'`, `'undefined'`, `'object'` (and null), `'function'`, `'bigint'`, `'symbol'`. Arrays are `'object'`. I use `Array.isArray`.
+`'string'`, `'number'`, `'boolean'`, `'undefined'`, `'object'` (null gives this too), `'function'`, `'bigint'` and `'symbol'`. Arrays also give `'object'`, so I use `Array.isArray` for them.
 
 **Cross-question:** Check for a Promise?
 
 **Cross-answer:**
 
-Duck: `typeof x?.then === 'function'`. Not perfect, but common.
+I use duck typing: `typeof x?.then === 'function'`. It is not perfect, but it is common.
 
 ---
 
@@ -276,13 +276,13 @@ Duck: `typeof x?.then === 'function'`. Not perfect, but common.
 
 **Answer:**
 
-`fn(...args)` is like apply. Rest in the definition: `function f(...args)`.
+`fn(...args)` works like `apply`. Rest is the same syntax in the definition: `function f(...args)`.
 
 **Cross-question:** Spread a string?
 
 **Cross-answer:**
 
-`[...'ab']` is `['a','b']`. Sometimes surprising.
+`[...'ab']` gives `['a','b']`. That can be surprising.
 
 ---
 
@@ -290,13 +290,13 @@ Duck: `typeof x?.then === 'function'`. Not perfect, but common.
 
 **Answer:**
 
-`for...of`: values. `for...in`: keys, including inherited — bad on arrays. `forEach`: cannot `break` easily, does not wait for async.
+`for...of` gives you values. `for...in` gives you keys, including inherited ones, so it is bad for arrays. `forEach` cannot `break` easily, and it does not wait for async code.
 
 **Cross-question:** Async inside `forEach`?
 
 **Cross-answer:**
 
-It will not wait. Use `for...of` with `await`.
+It will not wait. I use `for...of` with `await` instead.
 
 ---
 
@@ -304,13 +304,13 @@ It will not wait. Use `for...of` with `await`.
 
 **Answer:**
 
-Templates are easier to read. Same idea. For HTML I still do not paste user text into HTML strings.
+Templates are easier to read. It is the same idea underneath. For HTML, I still never paste user text into HTML strings.
 
 **Cross-question:** Performance?
 
 **Cross-answer:**
 
-Does not matter for normal UI. Do not build huge strings in a hot loop without care.
+For normal UI it does not matter. Just be careful when building huge strings in a hot loop.
 
 ---
 
@@ -318,13 +318,13 @@ Does not matter for normal UI. Do not build huge strings in a hot loop without c
 
 **Answer:**
 
-`parseInt('10px')` is 10. `Number('10px')` is `NaN`. `parseInt` needs a radix: `parseInt(s, 10)`.
+`parseInt('10px')` gives 10. `Number('10px')` gives `NaN`. With `parseInt`, always pass the radix: `parseInt(s, 10)`.
 
 **Cross-question:** `parseInt('08')`?
 
 **Cross-answer:**
 
-Always pass 10 so old octal rules cannot bite.
+I always pass 10, so the old octal rules cannot bite.
 
 ---
 
@@ -332,13 +332,13 @@ Always pass 10 so old octal rules cannot bite.
 
 **Answer:**
 
-Declarations are moved up in their scope. `function foo(){}` can be called early. `let`/`const` exist but throw if you touch them before the line (TDZ).
+Declarations are moved to the top of their scope. So `function foo(){}` can be called before its line. `let`/`const` exist too, but they throw if you touch them before their line. That gap is called the TDZ (temporal dead zone).
 
 **Cross-question:** `var` hoisting?
 
 **Cross-answer:**
 
-You get `undefined` until the assign line. That is why `var` bugs are sneaky.
+You get `undefined` until the line that assigns it. That is why `var` bugs are sneaky.
 
 ---
 
@@ -346,13 +346,13 @@ You get `undefined` until the assign line. That is why `var` bugs are sneaky.
 
 **Answer:**
 
-`a && b`: if a is truthy, result is b. `a || b`: if a is falsy, result is b. I prefer `??` for defaults so `0` stays `0`.
+`a && b`: if a is truthy, the result is b. `a || b`: if a is falsy, the result is b. For defaults I prefer `??`, so `0` stays `0`.
 
 **Cross-question:** `value || 10` when value is 0?
 
 **Cross-answer:**
 
-You get 10. Wrong for page size. Use `??`.
+You get 10. That is wrong for something like page size. Use `??`.
 
 ---
 
@@ -360,20 +360,20 @@ You get 10. Wrong for page size. Use `??`.
 
 **Answer:**
 
-One call stack. Slow I/O is handed off. When it finishes, a callback is queued. The page can stay responsive without extra threads. Workers exist if I need extra threads.
+There is one call stack. Slow I/O is handed off to the browser or runtime. When it finishes, a callback is queued. So the page stays responsive without extra threads. If I do need extra threads, there are Workers.
 
 **Cross-question:** Does `await` make a new thread?
 
 **Cross-answer:**
 
-No. It just schedules the rest of the function for later.
+No. It just schedules the rest of the function to run later.
 
 
 ---
 ## Additional Questions
 ### Q26. `null` vs `undefined`?
-**Answer:** Both mean “no useful value”, but they have different semantics. I use null when I intentionally set a value to empty and undefined when a value/property is missing. The important thing is consistency.
+**Answer:** Both mean “no useful value”, but they mean slightly different things. I use null when I set a value to empty on purpose, and undefined when a value or property is missing. The main thing is to be consistent.
 ### Q27. What do `map`, `filter`, and `reduce` do?
-**Answer:** map transforms items, filter keeps matching items, and reduce combines items into one result such as a total or object.
+**Answer:** map transforms each item, filter keeps the items that match, and reduce combines the items into one result, like a total or an object.
 ### Q28. What is optional chaining?
-**Answer:** `user?.profile?.name` stops and returns undefined if an earlier value is null or undefined. It avoids a lot of defensive if statements.
+**Answer:** `user?.profile?.name` stops and returns undefined if an earlier value is null or undefined. It saves me from writing a lot of defensive if statements.

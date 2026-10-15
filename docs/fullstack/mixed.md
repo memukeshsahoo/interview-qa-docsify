@@ -10,13 +10,13 @@ Answers are in simple spoken English.
 
 **Answer:**
 
-The user types email and password. Angular validates empty fields, then `HttpClient` posts to `/api/auth/login` over HTTPS. The API checks the user in that tenant’s database, verifies the password hash, and returns a token or sets a cookie. Angular stores the session the way we agreed (memory, cookie, or storage). Later calls add the token. The API reads the user from the token, not from a user id in the body.
+The user types an email and password. Angular checks that the fields aren't empty, then `HttpClient` posts to `/api/auth/login` over HTTPS. The API looks up the user in that tenant's database, checks the password hash, and returns a token or sets a cookie. Angular keeps the session the way we agreed (memory, cookie, or storage). Later calls send the token. The API reads the user from the token, not from a user id in the request body.
 
 **Cross-question:** Where do you *not* put the password?
 
 **Cross-answer:**
 
-Not in the URL, not in logs, not in localStorage as extra copy, not in error messages. Hash on the server. Never log the token either.
+Not in the URL, not in logs, not as an extra copy in localStorage, and not in error messages. The server hashes it. And I never log the token either.
 
 ---
 
@@ -24,13 +24,13 @@ Not in the URL, not in logs, not in localStorage as extra copy, not in error mes
 
 **Answer:**
 
-I open Network. I look at the URL, status, and JSON. If the body has rows, the bug is mapping or `*ngIf`. If the body is `[]`, I look at tenant, filters, and the user. I do not start by rewriting the UI.
+I open the Network tab and look at the URL, the status, and the JSON. If the body has rows, the bug is in the mapping or an `*ngIf`. If the body is `[]`, I check the tenant, the filters, and the user. I don't start by rewriting the UI.
 
 **Cross-question:** CORS error vs empty list?
 
 **Cross-answer:**
 
-CORS fails in the console and the call looks blocked. Empty list is a successful call with no rows. Different problems.
+A CORS error shows up in the console, and the call looks blocked. An empty list is a successful call that just has no rows. They're different problems.
 
 ---
 
@@ -38,13 +38,13 @@ CORS fails in the console and the call looks blocked. Empty list is a successful
 
 **Answer:**
 
-I treat the JSON as a contract. Same names, or one mapper. OpenAPI can generate types if the team uses it. I do not type everything as `any`. If the API changes a field, both sides change in the same PR when I own both.
+I treat the JSON as a contract. Either the names match, or there's one mapper. If the team uses OpenAPI, it can generate the types. I don't type everything as `any`. When the API changes a field and I own both sides, both change in the same PR.
 
 **Cross-question:** C# `long` id in Angular?
 
 **Cross-answer:**
 
-JSON numbers are doubles. Big ids can round. I send ids as strings if they are 64-bit.
+JSON numbers are read as doubles in JS, so big ids can get rounded. If ids are 64-bit, I send them as strings.
 
 ---
 
@@ -52,13 +52,13 @@ JSON numbers are doubles. Big ids can round. I send ids as strings if they are 6
 
 **Answer:**
 
-Angular is for instant UX. The API is the real gate. I duplicate required/email on both. I never skip the server because “the button is disabled”.
+Angular validation is for quick feedback to the user. The API is the real gate. I repeat the basic rules, like required and email, on both sides. I never skip server validation just because “the button is disabled”.
 
 **Cross-question:** Disabled button as security?
 
 **Cross-answer:**
 
-No. Anyone can call the API with Postman.
+No. Anyone can call the API directly with Postman.
 
 ---
 
@@ -66,13 +66,13 @@ No. Anyone can call the API with Postman.
 
 **Answer:**
 
-`FormData` + `HttpClient`. The API checks size and type, saves with a generated name, and checks the user can upload to that record. I do not trust the file name or the MIME type the browser sent.
+I use `FormData` with `HttpClient`. The API checks the size and type, saves the file under a generated name, and checks that the user is allowed to upload to that record. I don't trust the file name or the MIME type the browser sent.
 
 **Cross-question:** Put the file in git? In `wwwroot`?
 
 **Cross-answer:**
 
-Not git. `wwwroot` only if it is public. Private files go through a download action that checks permission.
+Not in git. `wwwroot` only if the file is meant to be public. Private files go through a download action that checks permission.
 
 ---
 
@@ -80,13 +80,13 @@ Not git. `wwwroot` only if it is public. Private files go through a download act
 
 **Answer:**
 
-Polling: simple, extra load. SignalR: live, more moving parts, needs a backplane if more than one server. I poll if the screen can be 30 seconds stale. I use SignalR for chat or live status.
+Polling is simple but adds extra load. SignalR is live but has more moving parts, and it needs a backplane if you run more than one server. If the screen can be 30 seconds out of date, I poll. For chat or live status, I use SignalR.
 
 **Cross-question:** Auth on the socket?
 
 **Cross-answer:**
 
-Same user as HTTP. Do not push another tenant’s events.
+It's the same user as on HTTP. And the server must never push another tenant's events.
 
 ---
 
@@ -94,13 +94,13 @@ Same user as HTTP. Do not push another tenant’s events.
 
 **Answer:**
 
-If the data is large or secret, the API. Angular can filter a small already-downloaded list for extra UX. I do not download 50,000 rows to hide them in the UI.
+If the data is large or sensitive, filtering happens in the API. Angular can filter a small list it already downloaded, as a nice extra for the user. I don't download 50,000 rows just to hide them in the UI.
 
 **Cross-question:** Tenant filter in Angular only?
 
 **Cross-answer:**
 
-Never. That is not security.
+Never. That's not security.
 
 ---
 
@@ -108,7 +108,7 @@ Never. That is not security.
 
 **Answer:**
 
-API: ProblemDetails, no stack traces. Angular interceptor: show a toast for 500, redirect on 401, a clear message on 400. I log a correlation id on both sides so support can find the server log.
+On the API, I return ProblemDetails and no stack traces. In Angular, an interceptor shows a toast for 500, redirects on 401, and shows a clear message on 400. I log a correlation id on both sides so support can find the matching server log.
 
 **Cross-question:** Show the SQL error in the toast?
 
@@ -122,13 +122,13 @@ No.
 
 **Answer:**
 
-Additive changes are safest. Breaking changes get `/v2` or a new field next to the old one for a while. Angular ships after the API, or together if we own both.
+Additive changes are the safest. For breaking changes, I add `/v2`, or add a new field next to the old one for a while. Angular ships after the API, or at the same time if we own both.
 
 **Cross-question:** Two Angular versions in the wild?
 
 **Cross-answer:**
 
-The API must support the old contract until clients upgrade. I do not break mobile users on a Friday.
+Then the API has to keep supporting the old contract until clients upgrade. I don't break mobile users on a Friday.
 
 ---
 
@@ -136,13 +136,13 @@ The API must support the old contract until clients upgrade. I do not break mobi
 
 **Answer:**
 
-Database is the source of truth. Angular signals are UI state. Server session/cookie is “who is logged in”. I do not store the shopping cart only in a memory singleton on the API if I have more than one server.
+The database is the source of truth. Angular signals hold UI state. The server session or cookie answers “who is logged in”. If I have more than one server, I don't keep something like the shopping cart only in an in-memory singleton on the API.
 
 **Cross-question:** In-memory cache as source of truth?
 
 **Cross-answer:**
 
-It vanishes on restart and differs per server. Fine as a cache, not as the record.
+It disappears on restart and it's different on each server. It's fine as a cache, but not as the real record.
 
 ---
 
@@ -150,13 +150,13 @@ It vanishes on restart and differs per server. Fine as a cache, not as the recor
 
 **Answer:**
 
-API: WebApplicationFactory plus a test database. Angular: TestBed and HttpTestingController. A few e2e tests for login and one main flow. I do not e2e every field.
+For the API, I use WebApplicationFactory with a test database. For Angular, TestBed and HttpTestingController. Then a few e2e tests for login and one main flow. I don't write e2e tests for every field.
 
 **Cross-question:** Mock the API in e2e only?
 
 **Cross-answer:**
 
-Then I never see real contract bugs. I want at least one test against a real local API.
+Then I never catch real contract bugs. I want at least one test running against a real local API.
 
 ---
 
@@ -164,13 +164,13 @@ Then I never see real contract bugs. I want at least one test against a real loc
 
 **Answer:**
 
-Network tab: TTFB high → server/SQL. Download huge → payload or bundle. CPU in Performance panel → Angular list. I measure before I guess.
+I start in the Network tab. If TTFB (time to first byte) is high, it's the server or SQL. If the download is huge, it's the payload or the bundle. If the Performance panel shows heavy CPU, it's the Angular list. I measure before I guess.
 
 **Cross-question:** First fix?
 
 **Cross-answer:**
 
-The biggest number. Often N+1 SQL or a list without trackBy. Not a new framework.
+The biggest number. Often that's N+1 SQL or a list without trackBy. It's not a new framework.
 
 ---
 
@@ -178,13 +178,13 @@ The biggest number. Often N+1 SQL or a list without trackBy. Not a new framework
 
 **Answer:**
 
-I do not pass a token into Hangfire as the only auth forever. I pass user id and tenant id that the API already trusted, store the job in that tenant, and the worker opens that tenant’s database. The job does not trust a raw id from the browser.
+I don't pass a token into Hangfire and treat it as the only auth forever. I pass the user id and tenant id that the API already trusted, store the job under that tenant, and the worker opens that tenant's database. The job never trusts a raw id that came from the browser.
 
 **Cross-question:** Run the job as the user?
 
 **Cross-answer:**
 
-I record who asked. The worker uses a service identity plus those ids, with the same permission rules.
+I record who asked for it. The worker runs with a service identity plus those ids, and applies the same permission rules.
 
 ---
 
@@ -192,7 +192,7 @@ I record who asked. The worker uses a service identity plus those ids, with the 
 
 **Answer:**
 
-Different origins. The API must allow `localhost:4200` in dev. A proxy in `proxy.conf.json` can hide this in development by using the same origin. Prod is often same domain behind nginx.
+Those are different origins, so the API has to allow `localhost:4200` in dev. A proxy in `proxy.conf.json` can hide this during development by making calls look same-origin. In production it's often the same domain behind nginx.
 
 **Cross-question:** `AllowAnyOrigin` to save time?
 
@@ -206,7 +206,7 @@ Not with credentials. I list the real origins.
 
 **Answer:**
 
-Git: code, non-secret config keys, example values. User secrets: local connection strings. Server env or a vault: production secrets. Angular env: public API URL only.
+Git gets the code, non-secret config keys, and example values. User secrets hold local connection strings. Production secrets go in server environment variables or a vault. The Angular environment file holds only the public API URL.
 
 **Cross-question:** `appsettings.json` with a real password?
 
@@ -220,13 +220,13 @@ No.
 
 **Answer:**
 
-Agree the meaning with the business. Count in SQL/EF with tenant filter. Return one DTO. Angular shows the number and a loading/error state. I do not count in the UI from a partial list.
+First I agree with the business on what the number means. Then I count it in SQL/EF with the tenant filter and return one DTO. Angular shows the number with a loading and an error state. I don't count in the UI from a partial list.
 
 **Cross-question:** Cache the number?
 
 **Cross-answer:**
 
-Maybe for a few seconds, keyed by tenant. Stale cards confuse people. I keep TTL short.
+Maybe for a few seconds, keyed by tenant. Stale cards confuse people, so I keep the TTL short.
 
 ---
 
@@ -234,13 +234,13 @@ Maybe for a few seconds, keyed by tenant. Stale cards confuse people. I keep TTL
 
 **Answer:**
 
-I store the raw text (or sanitized if the product needs HTML). I encode on output. Angular interpolation encodes. I never `innerHTML` that field. The API does not return HTML unless it is a very clear, sanitized feature.
+I store the raw text (or sanitized text if the product needs HTML), and I encode it on output. Angular interpolation already encodes. I never use `innerHTML` for that field. The API doesn't return HTML unless it's a very clear, sanitized feature.
 
 **Cross-question:** Markdown?
 
 **Cross-answer:**
 
-Render with a sanitizer. No raw HTML from the user.
+I render it with a sanitizer. No raw HTML from the user.
 
 ---
 
@@ -248,13 +248,13 @@ Render with a sanitizer. No raw HTML from the user.
 
 **Answer:**
 
-Store UTC. API sends ISO-8601 with Z or offset. Angular shows it in the user’s locale with `DatePipe`. I do not store “server local time”.
+I store UTC. The API sends ISO-8601 with a Z or an offset. Angular shows it in the user's locale with `DatePipe`. I don't store “server local time”.
 
 **Cross-question:** Birthday?
 
 **Cross-answer:**
 
-That is a date without time. `DateOnly` on the server. Do not convert it through UTC or the day can shift.
+That's a date with no time, so I use `DateOnly` on the server. Don't convert it through UTC, or the day can shift.
 
 ---
 
@@ -262,13 +262,13 @@ That is a date without time. `DateOnly` on the server. Do not convert it through
 
 **Answer:**
 
-Config or a small table. API can hide endpoints. Angular can hide routes. Both. A hidden button is not enough if the API still works.
+The flag lives in config or a small table. The API can hide endpoints and Angular can hide routes, and I do both. A hidden button isn't enough if the API still works.
 
 **Cross-question:** Flag in Angular environment only?
 
 **Cross-answer:**
 
-Users can flip it in DevTools. The API must refuse.
+Users can flip it in DevTools. The API has to refuse the call.
 
 ---
 
@@ -276,13 +276,13 @@ Users can flip it in DevTools. The API must refuse.
 
 **Answer:**
 
-I keep: auth, tenant check, one list, one create, empty and error states. I cut: pretty charts, extra filters, perfect animations, extra roles. I write the risk down.
+I keep auth, the tenant check, one list, one create, and the empty and error states. I cut pretty charts, extra filters, perfect animations, and extra roles. And I write the risks down.
 
 **Cross-question:** Skip tests?
 
 **Cross-answer:**
 
-I keep one isolation test and the main happy path if I can. I do not skip auth checks.
+If I can, I keep one isolation test and the main happy path. I don't skip auth checks.
 
 ---
 
@@ -290,13 +290,13 @@ I keep one isolation test and the main happy path if I can. I do not skip auth c
 
 **Answer:**
 
-C# and .NET are the kitchen. Angular is the dining room. JavaScript is the language the dining room speaks. The database is the pantry. I make sure an order from table 5 never gets table 6’s food.
+C# and .NET are the kitchen. Angular is the dining room. JavaScript is the language the dining room speaks. The database is the pantry. My job is to make sure an order from table 5 never gets table 6's food.
 
 **Cross-question:** What is a DTO in that picture?
 
 **Cross-answer:**
 
-The plate we send out. Not the whole pantry shelf.
+It's the plate we send out, not the whole pantry shelf.
 
 ---
 
@@ -304,15 +304,15 @@ The plate we send out. Not the whole pantry shelf.
 
 **Answer:**
 
-Pick a real one if you have it. A safe example:
+Pick a real one if you have it. Here's a safe example:
 
-> The UI sent dates as local strings. The API parsed them as UTC. Filters were off by one day. We agreed on ISO UTC and a `DatePipe` on the screen.
+> The UI sent dates as local strings, but the API parsed them as UTC. So the filters were off by one day. We agreed on ISO UTC in the API and used a `DatePipe` on the screen.
 
 **Cross-question:** How do you prevent it?
 
 **Cross-answer:**
 
-One date format in the contract, a shared example in the API docs, and a test that a known instant round-trips.
+One date format in the contract, a shared example in the API docs, and a test that checks a known instant round-trips correctly.
 
 ---
 
@@ -322,15 +322,15 @@ One date format in the contract, a shared example in the API docs, and a test th
 
 1. HTTPS.
 2. Auth on every API.
-3. Tenant from server context, not from the body.
-4. DTOs, no extra fields.
-5. Angular hides UI; API still checks.
+3. Tenant comes from the server context, not from the body.
+4. DTOs, with no extra fields.
+5. Angular hides UI, but the API still checks.
 
 **Cross-question:** Sixth?
 
 **Cross-answer:**
 
-Do not log tokens. Do not put secrets in the Angular bundle.
+Don't log tokens, and don't put secrets in the Angular bundle.
 
 ---
 
@@ -338,13 +338,13 @@ Do not log tokens. Do not put secrets in the Angular bundle.
 
 **Answer:**
 
-Yes in spirit. `switchMap` drops the old HTTP call. `CancellationToken` tells EF/HTTP to stop. If the user types fast, I want both: Angular cancels the old request, Kestrel notices the abort, EF stops.
+Yes, in spirit. `switchMap` drops the old HTTP call. `CancellationToken` tells EF or HTTP work to stop. If the user types fast, I want both: Angular cancels the old request, Kestrel notices the abort, and EF stops.
 
 **Cross-question:** Does Angular cancel reach EF automatically?
 
 **Cross-answer:**
 
-If the browser aborts, the request can cancel. I still pass the token in the API action. I do not ignore it.
+If the browser aborts, the request can be cancelled. But I still have to pass the token through the API action. I don't ignore it.
 
 ---
 
@@ -352,13 +352,13 @@ If the browser aborts, the request can cancel. I still pass the token in the API
 
 **Answer:**
 
-Wrong API URL in environment.prod. Hash routing vs server rewrite. Base href. Minifier exposing a bug. Lazy chunk 404 because the path is wrong.
+Common reasons: a wrong API URL in environment.prod, hash routing vs server rewrite rules, the base href, the minifier exposing a bug, or a lazy chunk 404 because the path is wrong.
 
 **Cross-question:** First place you look?
 
 **Cross-answer:**
 
-Browser console and the failed network request. Then `environment.prod` and the server’s fallback to `index.html`.
+The browser console and the failed network request. Then `environment.prod` and the server's fallback to `index.html`.
 
 ---
 
@@ -366,13 +366,13 @@ Browser console and the failed network request. Then `environment.prod` and the 
 
 **Answer:**
 
-User types phone and password. Angular posts `POST /api/Auth/login`. API finds the user, checks BCrypt, writes `UserLoginActivity`, returns JWT + refresh token, plus flags like `isApprovedUser` and `hasActiveSubscription`. Angular stores the access token and sends `Authorization: Bearer` on later calls. Session claims drive the association filter. OTP is a separate signup flow, not this login.
+The user types their phone number and password. Angular posts to `POST /api/Auth/login`. The API finds the user, checks the password with BCrypt, writes a `UserLoginActivity` row, and returns a JWT and a refresh token, plus flags like `isApprovedUser` and `hasActiveSubscription`. Angular stores the access token and sends `Authorization: Bearer` on later calls. The session claims drive the association filter. OTP is part of a separate signup flow, not this login.
 
 **Cross-question:** Password in the log?
 
 **Cross-answer:**
 
-We log phone number on login, not the password. Never log the JWT or refresh token.
+On login we log the phone number, not the password. We never log the JWT or the refresh token.
 
 ---
 
@@ -380,13 +380,13 @@ We log phone number on login, not the password. Never log the JWT or refresh tok
 
 **Answer:**
 
-Web/app booking POST with service provider, service type, dates. Server checks the user is an NR user, prices from `ServiceProviderServices`, adds tax / association / platform / verifier fees, locks the wallet, creates a hold, opens a chat, returns the booking number. Angular then shows Under Discussion and the chat thread.
+The web or app sends a booking POST with the service provider, service type, and dates. The server checks that the user is an NR user, gets the price from `ServiceProviderServices`, and adds tax, association, platform, and verifier fees. Then it locks the wallet, creates a hold, opens a chat, and returns the booking number. Angular then shows the booking as Under Discussion along with the chat thread.
 
 **Cross-question:** Is the provider paid at that moment?
 
 **Cross-answer:**
 
-No. Only a hold. Payout is `ReleasePayment` when the job is completed (or after verifier approval).
+No, it's only a hold. The payout happens in `ReleasePayment` when the job is completed (or after verifier approval).
 
 ---
 
@@ -394,20 +394,20 @@ No. Only a hold. Payout is `ReleasePayment` when the job is completed (or after 
 
 **Answer:**
 
-One ASP.NET API. Web routes `api/...`, mobile `api/app/...`, common `api/Auth`, OTP, files. Two Swagger docs. Same JWT, same database. Angular admin/web is `NriCare.Web.UI`. That is why a booking created on mobile still shows in the web association dashboard, as long as the association filter allows it.
+It's one ASP.NET API. Web routes are under `api/...`, mobile under `api/app/...`, and common ones like `api/Auth`, OTP, and files are shared. There are two Swagger docs. Both use the same JWT and the same database. The Angular admin/web app is `NriCare.Web.UI`. That's why a booking created on mobile still shows up in the web association dashboard, as long as the association filter allows it.
 
 **Cross-question:** Different tokens per client?
 
 **Cross-answer:**
 
-Same token shape. `session_id` is per login, not per “web vs app”. Logout should revoke that session’s refresh token — today logout only records logout time.
+The token shape is the same. `session_id` is per login, not per “web vs app”. Logout should revoke that session's refresh token, but today logout only records the logout time.
 
 
 ---
 ## Additional Questions
 ### Q29. How do you handle a file upload end to end?
-**Answer:** Angular sends FormData. The API checks authentication, authorization, size and type, stores the file in private/object storage, and returns a safe file id or URL. Downloads go through permission checks.
+**Answer:** Angular sends FormData. The API checks authentication, authorization, size and type, stores the file in private or object storage, and returns a safe file id or URL. Downloads go through permission checks.
 ### Q30. How do you keep frontend and backend contracts aligned?
-**Answer:** I define DTOs and API examples clearly, use generated clients or shared OpenAPI where practical, and test important contracts. A backend field rename should not silently break the Angular app.
+**Answer:** I define DTOs and API examples clearly, use generated clients or a shared OpenAPI spec where it makes sense, and test the important contracts. A field rename on the backend should not quietly break the Angular app.
 ### Q31. How would you debug a slow full-stack page?
-**Answer:** Start with the browser Network waterfall. Then separate API time, SQL time, payload size and rendering time. I fix the biggest measured bottleneck first.
+**Answer:** I start with the browser's Network waterfall. Then I separate API time, SQL time, payload size and rendering time. I fix the biggest measured bottleneck first.

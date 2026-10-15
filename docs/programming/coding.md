@@ -8,7 +8,7 @@ They ask you to write a small function. Talk while you type. Mention tests and c
 
 **Answer:**
 
-Do not mutate `string`. Use `Array.Reverse` on chars, or a `StringBuilder`. For Unicode, mention you are reversing **code units** unless they want full rune support.
+I don't try to mutate the `string`. I use `Array.Reverse` on the chars, or a `StringBuilder`. For Unicode, I mention that I'm reversing **code units**, unless they want full rune support.
 
 **Example:**
 
@@ -22,11 +22,11 @@ static string Reverse(string s)
 }
 ```
 
-**Real-world example:** Rarely reverse strings in a ticket API. They use this to see if you know immutability.
+**Real-world example:** You rarely reverse strings in a ticket API. They ask this to see if you know strings are immutable.
 
 **Cross-question:** In-place?
 
-**Cross-answer:** Strings cannot. Reverse a `char[]` or `Span<char>`.
+**Cross-answer:** Strings can't be changed in place. I reverse a `char[]` or a `Span<char>` instead.
 
 ---
 
@@ -34,7 +34,7 @@ static string Reverse(string s)
 
 **Answer:**
 
-Two pointers from both ends. Skip non-letters. Compare lowercase.
+Two pointers, one from each end. Skip anything that isn't a letter. Compare in lowercase.
 
 **Example:**
 
@@ -54,11 +54,11 @@ static bool IsPalindrome(string s)
 }
 ```
 
-**Real-world example:** Validating a “code” field that must read the same forward and back. More often they just want two pointers.
+**Real-world example:** Validating a “code” field that must read the same forwards and backwards. Most of the time, though, they just want to see two pointers.
 
 **Cross-question:** LINQ `s.Reverse().SequenceEqual(s)`?
 
-**Cross-answer:** Works, extra allocations. Fine for small strings.
+**Cross-answer:** It works, but with extra allocations. Fine for small strings.
 
 ---
 
@@ -66,7 +66,7 @@ static bool IsPalindrome(string s)
 
 **Answer:**
 
-One pass, dictionary `value → index`. For each `x`, look for `target - x`.
+One pass with a dictionary of `value → index`. For each `x`, I look up `target - x`.
 
 **Example:**
 
@@ -85,11 +85,11 @@ static int[] TwoSum(int[] nums, int target)
 }
 ```
 
-**Real-world example:** Matching invoice lines to a remaining amount. Same idea as a lookup instead of nested loops.
+**Real-world example:** Matching invoice lines to a remaining amount. Same idea: a lookup instead of nested loops.
 
 **Cross-question:** Nested loop O(n²)?
 
-**Cross-answer:** Works, too slow for large n. Hash map is O(n).
+**Cross-answer:** It works, but it's too slow for large n. The hash map is O(n).
 
 ---
 
@@ -97,7 +97,7 @@ static int[] TwoSum(int[] nums, int target)
 
 **Answer:**
 
-Filter, order, take, project DTO, async, no tracking.
+Filter, order, take, project to a DTO, async, no tracking.
 
 **Example:**
 
@@ -111,11 +111,11 @@ var latest = await db.Incidents
     .ToListAsync(ct);
 ```
 
-**Real-world example:** Dashboard “latest open” widget. Same query as REST optimization.
+**Real-world example:** A dashboard “latest open” widget. Same query as REST optimization.
 
 **Cross-question:** `ToList` then `Take`?
 
-**Cross-answer:** Pulls all open rows. `Take` must stay on `IQueryable`.
+**Cross-answer:** That pulls every open row into memory. `Take` must stay on the `IQueryable`.
 
 ---
 
@@ -130,11 +130,11 @@ var counts = await db.Incidents
     .ToListAsync(ct);
 ```
 
-**Real-world example:** KPI cards Open / Closed / OnHold. One query, not three.
+**Real-world example:** KPI cards for Open / Closed / OnHold. One query, not three.
 
 **Cross-question:** Three `CountAsync` calls?
 
-**Cross-answer:** Three round trips. `GroupBy` is one.
+**Cross-answer:** That's three round trips. `GroupBy` is one.
 
 ---
 
@@ -142,7 +142,7 @@ var counts = await db.Incidents
 
 **Answer:**
 
-Wait until the user pauses, then fire. Abort in-flight fetch.
+Wait until the user pauses typing, then fire the search. Abort any fetch that is still in flight.
 
 **Example:**
 
@@ -161,11 +161,11 @@ const search = debounce(async (q) => {
 }, 300);
 ```
 
-**Real-world example:** Header search on the incident board. Same as Angular `debounceTime` + `switchMap`.
+**Real-world example:** The header search on the incident board. Same as Angular `debounceTime` + `switchMap`.
 
 **Cross-question:** Throttle?
 
-**Cross-answer:** At most once per interval (scroll). Search wants debounce.
+**Cross-answer:** Throttle fires at most once per interval, which suits scroll. Search wants debounce.
 
 ---
 
@@ -173,7 +173,7 @@ const search = debounce(async (q) => {
 
 **Answer:**
 
-Tree of comments. Recursion is fine if depth is small. For unknown depth, explicit stack.
+Comments form a tree. Recursion is fine if the depth is small. If the depth is unknown, I use an explicit stack.
 
 **Example:**
 
@@ -189,11 +189,11 @@ IEnumerable<Comment> Flatten(IEnumerable<Comment> roots)
 }
 ```
 
-**Real-world example:** Incident comment thread export to a flat activity log.
+**Real-world example:** Exporting an incident comment thread to a flat activity log.
 
 **Cross-question:** Infinite parent loop?
 
-**Cross-answer:** Guard with a `HashSet` of visited ids.
+**Cross-answer:** I guard against it with a `HashSet` of visited ids.
 
 ---
 
@@ -201,7 +201,7 @@ IEnumerable<Comment> Flatten(IEnumerable<Comment> roots)
 
 **Answer:**
 
-They may ask you to type it. Root service + signal. A calls `select`. B reads.
+They may ask you to type it out. A root service with a signal. Component A calls `select`, and component B reads the value.
 
 **Example:**
 
@@ -214,11 +214,11 @@ export class SelectionService {
 }
 ```
 
-**Real-world example:** List and header badge. Full write-up: [Angular situational Q1](../angular/situational.md).
+**Real-world example:** A list and a header badge. Full write-up: [Angular situational Q1](../angular/situational.md).
 
 **Cross-question:** `@Input` between them?
 
-**Cross-answer:** Only if parent-child. Unrelated → service.
+**Cross-answer:** Only if they are parent and child. For unrelated components → a service.
 
 ---
 
@@ -226,7 +226,7 @@ export class SelectionService {
 
 **Answer:**
 
-`GroupBy` + `Where(g => g.Count() > 1)`, or `HashSet` while iterating.
+`GroupBy` + `Where(g => g.Count() > 1)`, or a `HashSet` while looping through.
 
 **Example:**
 
@@ -237,11 +237,11 @@ var dupes = ids.GroupBy(x => x)
     .ToList();
 ```
 
-**Real-world example:** Importing tickets from Excel — duplicate external ids before insert.
+**Real-world example:** Importing tickets from Excel and catching duplicate external ids before insert.
 
 **Cross-question:** `Distinct`?
 
-**Cross-answer:** Removes dupes. It does not **list** which values were duplicated.
+**Cross-answer:** It removes the dupes, but it does not **tell you** which values were duplicated.
 
 ---
 
@@ -258,11 +258,11 @@ for (int i = 1; i <= 100; i++)
 }
 ```
 
-**Real-world example:** None. They want clean conditions, not nested mess.
+**Real-world example:** None. They want clean conditions, not a nested mess.
 
 **Cross-question:** Extend to 7 → “Qix”?
 
-**Cross-answer:** List of rules `(3,"Fizz"), (5,"Buzz")` and concatenate. Shows you do not hard-code only two cases.
+**Cross-answer:** Keep a list of rules like `(3,"Fizz"), (5,"Buzz")` and join the matches. It shows you don't hard-code just two cases.
 
 ---
 
@@ -270,7 +270,7 @@ for (int i = 1; i <= 100; i++)
 
 **Answer:**
 
-Stack. Push `(`, pop on `)`. Empty at end.
+Use a stack. Push on `(`, pop on `)`. The stack must be empty at the end.
 
 **Example:**
 
@@ -291,11 +291,11 @@ static bool Balanced(string s)
 }
 ```
 
-**Real-world example:** Validating a filter expression the user typed. Same idea for `{}` `[]`.
+**Real-world example:** Validating a filter expression the user typed. Same idea works for `{}` `[]`.
 
 **Cross-question:** `"(()"`?
 
-**Cross-answer:** False — stack not empty.
+**Cross-answer:** False, because the stack is not empty at the end.
 
 ---
 
@@ -303,7 +303,7 @@ static bool Balanced(string s)
 
 **Answer:**
 
-Query: `status`, `q`, `page`, `pageSize`. Auth. Tenant from context. DTO list. 200 + empty array. 401 if no token. Never 500 for “no rows”.
+Query params: `status`, `q`, `page`, `pageSize`. It needs auth. The tenant comes from context. It returns a DTO list. No results means 200 with an empty array. 401 if there is no token. Never a 500 for “no rows”.
 
 **Example:**
 
@@ -316,11 +316,11 @@ Authorization: Bearer ...
 { "items": [ { "id": 1, "title": "VPN down", "commentCount": 3 } ], "page": 1, "hasMore": true }
 ```
 
-**Real-world example:** Incident board first paint. Same as [REST optimization](../dotnet/rest-api-optimization.md).
+**Real-world example:** The first load of the incident board. Same as [REST optimization](../dotnet/rest-api-optimization.md).
 
 **Cross-question:** PUT vs PATCH for status?
 
-**Cross-answer:** PATCH `{ "status": "Closed" }` if we only change status. PUT if we replace the whole resource.
+**Cross-answer:** PATCH `{ "status": "Closed" }` if we only change the status. PUT if we replace the whole resource.
 
 ---
 
@@ -328,7 +328,7 @@ Authorization: Bearer ...
 
 **Answer:**
 
-Available = gross balance minus active, non-expired holds. Speak it while you type. Do not mutate Balance here.
+Available = gross balance minus the active, non-expired holds. Say it out loud while you type. Don't change Balance here.
 
 **Example:**
 
@@ -345,13 +345,13 @@ static decimal Available(decimal balance, IEnumerable<Hold> holds, DateTime utcN
 
 **Real-world example:**
 
-This is `GetWalletBalanceAsync` in NriCare. Booking create uses a stricter version: all Active holds, no expiry skip.
+This is `GetWalletBalanceAsync` in NriCare. Booking create uses a stricter version: it counts all Active holds and doesn't skip expired ones.
 
 **Cross-question:** Negative available?
 
 **Cross-answer:**
 
-Treat as 0 for display. For booking, fail if `available < required`.
+Show it as 0 on screen. For a booking, fail if `available < required`.
 
 ---
 
@@ -359,7 +359,7 @@ Treat as 0 for display. For booking, fail if `available < required`.
 
 **Answer:**
 
-One pass with `GroupBy`, or two sums. In an interview, one loop or LINQ is enough.
+One pass with `GroupBy`, or two sums. In an interview, one loop or one LINQ query is enough.
 
 **Example:**
 
@@ -371,13 +371,13 @@ var totals = txns.GroupBy(t => t.FlowType)
 
 **Real-world example:**
 
-Wallet history in NriCare computes incoming/outgoing counts and sums with separate queries. Interviewers like one `GroupBy` instead of four round trips.
+Wallet history in NriCare works out the incoming/outgoing counts and sums with separate queries. Interviewers like to see one `GroupBy` instead of four round trips.
 
 **Cross-question:** Do this in SQL?
 
 **Cross-answer:**
 
-Yes if `txns` is `IQueryable`. If you `ToList` first, grouping is in memory.
+Yes, if `txns` is an `IQueryable`. If you `ToList` first, the grouping happens in memory.
 
 ---
 
@@ -385,7 +385,7 @@ Yes if `txns` is `IQueryable`. If you `ToList` first, grouping is in memory.
 
 **Answer:**
 
-Client or server sends a key `release_{bookingId}`. Unique store. If it exists, return the first result. If not, run the split in one transaction.
+The client or server sends a key like `release_{bookingId}`, kept in a store where it must be unique. If the key already exists, return the first result. If not, run the split in one transaction.
 
 **Example:**
 
@@ -401,13 +401,13 @@ await tx.CommitAsync(ct);
 
 **Real-world example:**
 
-`BookingRepository.ReleasePayment` already uses keys like `release_{bookingId}` and `release_sp_{bookingId}`. Next step: unique index.
+`BookingRepository.ReleasePayment` already uses keys like `release_{bookingId}` and `release_sp_{bookingId}`. The next step is a unique index.
 
 **Cross-question:** GET vs POST for release?
 
 **Cross-answer:**
 
-POST. It changes money. GET should not.
+POST. It moves money, and GET should never change anything.
 
 ---
 
@@ -415,7 +415,7 @@ POST. It changes money. GET should not.
 
 **Answer:**
 
-Filter by user, status, order, take, project. Async. No tracking.
+Filter by user and status, order, take, project. Async, no tracking.
 
 **Example:**
 
@@ -431,19 +431,19 @@ var rows = await db.Bookings
 
 **Real-world example:**
 
-Same shape as an NR user home list in NriCare. Status is an enum, not a magic string.
+Same shape as the NR user home list in NriCare. Status is an enum, not a magic string.
 
 **Cross-question:** `ToList` then `Where` status?
 
 **Cross-answer:**
 
-Loads every booking for that user. Keep `Where` on `IQueryable`.
+That loads every booking for the user. Keep the `Where` on the `IQueryable`.
 
 
 ---
 ## Additional Questions
 ### Q17. Find the first non-repeating character.
-**Answer:** Count each character first, then scan the string again and return the first character whose count is one. This is O(n) time.
+**Answer:** First I count each character, then I scan the string again and return the first character with a count of one. That is O(n) time.
 
 ```csharp
 var counts = s.GroupBy(c => c).ToDictionary(g => g.Key, g => g.Count());
@@ -451,7 +451,7 @@ var first = s.FirstOrDefault(c => counts[c] == 1);
 ```
 
 ### Q18. Remove duplicates while keeping order.
-**Answer:** Use a HashSet to remember what I already saw, then add only the first occurrence.
+**Answer:** I use a HashSet to remember what I've already seen, and keep only the first occurrence of each value.
 
 ```csharp
 var seen = new HashSet<int>();
@@ -459,7 +459,7 @@ var result = numbers.Where(seen.Add).ToList();
 ```
 
 ### Q19. Binary search — when would you use it?
-**Answer:** When the input is sorted and I need to find a value efficiently. Each step removes about half the search space, so it is O(log n).
+**Answer:** When the input is sorted and I need to find a value quickly. Each step throws away about half of what's left to search, so it is O(log n).
 
 ### Q20. How would you retry an external API safely?
-**Answer:** Retry only transient failures, use a timeout and backoff, and use an idempotency key for operations that can create money/orders. Never blindly retry a non-idempotent payment.
+**Answer:** I retry only transient failures, with a timeout and backoff. For operations that can create money or orders, I use an idempotency key. I never blindly retry a payment that isn't idempotent.

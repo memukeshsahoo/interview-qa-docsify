@@ -12,9 +12,9 @@ These are “what would you do if…” questions. Each one has:
 
 **Answer:**
 
-If they are not parent and child, `@Input` and `@Output` cannot talk to each other. I put the shared data in a **service** that both inject. The service holds a signal or a `BehaviorSubject`. A writes. B reads. Both components stay dumb. The service is the relation.
+I put the shared data in a **service** that both of them inject. Since they aren't parent and child, `@Input` and `@Output` can't connect them. The service holds a signal or a `BehaviorSubject`. A writes to it, B reads from it, and both components stay dumb. The service is the relation between them.
 
-Do not use a global variable. Do not reach into the other component with `document.getElementById`.
+I don't use a global variable, and I don't reach into the other component with `document.getElementById`.
 
 **Example:**
 
@@ -53,13 +53,13 @@ export class HeaderBadgeComponent {
 
 **Real-world example:**
 
-Incident **list** is on the left. A **notification bell** is in the top header. They are not parent-child. When the user clicks a row, the bell should show “1 selected”. The list cannot `@Output` to the header. A root `SelectedIncidentService` is the link.
+The incident **list** is on the left, and a **notification bell** is in the top header. They aren't parent and child. When the user clicks a row, the bell should show “1 selected”. The list can't `@Output` to the header, so a root `SelectedIncidentService` is the link.
 
 **Cross-question:** Why not `providedIn` on the list component?
 
 **Cross-answer:**
 
-If the service is provided on A, B gets a **different** instance. They will not share data. Use `providedIn: 'root'` (or a parent route that wraps both) so there is one object.
+If the service is provided on A, B gets a **different** instance, so they won't share data. I use `providedIn: 'root'` (or a parent route that wraps both) so there's only one object.
 
 ---
 
@@ -67,7 +67,7 @@ If the service is provided on A, B gets a **different** instance. They will not 
 
 **Answer:**
 
-Down with `@Input`. Up with `@Output`. Parent owns the data. Child only displays or asks to change.
+Data goes down with `@Input`, and events go up with `@Output`. The parent owns the data. The child only displays it or asks for a change.
 
 **Example:**
 
@@ -107,13 +107,13 @@ export class IncidentPageComponent {
 
 **Real-world example:**
 
-Incident **page** owns the ticket. **Card** only shows title and a Close button. The card does not call HTTP. The page closes it so one place owns the API.
+The incident **page** owns the ticket. The **card** only shows the title and a Close button. The card doesn't call HTTP. The page does the closing, so only one place owns the API call.
 
 **Cross-question:** Can the child inject the parent class?
 
 **Cross-answer:**
 
-Technically yes. Do not. It ties the card to one parent and makes tests hard. Input/output stays reusable.
+Technically yes, but I don't. It ties the card to one parent and makes testing hard. With input/output, the card stays reusable.
 
 ---
 
@@ -121,7 +121,7 @@ Technically yes. Do not. It ties the card to one parent and makes tests hard. In
 
 **Answer:**
 
-Lift the state to the **parent**. A emits an event. Parent stores it. Parent passes it to B as input. If they later move apart, switch to a service.
+I lift the state up to the **parent**. A emits an event, the parent stores the value, and the parent passes it to B as an input. If they later move apart, I switch to a service.
 
 **Example:**
 
@@ -138,13 +138,13 @@ export class IncidentsShellComponent {
 
 **Real-world example:**
 
-Filter chips and the table sit on one **Incidents** page. Filter does not import the table. The shell page holds `status`. Both stay simple.
+The filter chips and the table sit on one **Incidents** page. The filter doesn't import the table. The shell page holds `status`, and both components stay simple.
 
 **Cross-question:** When do siblings need a service instead?
 
 **Cross-answer:**
 
-When they are not always under the same parent — for example filter in a sidebar layout and table in `router-outlet`. Then a service (or query params) is better.
+When they aren't always under the same parent — for example, the filter is in a sidebar layout and the table is in the `router-outlet`. Then a service (or query params) works better.
 
 ---
 
@@ -152,13 +152,13 @@ When they are not always under the same parent — for example filter in a sideb
 
 **Answer:**
 
-They do not share a parent view. Options:
+They don't share a parent view, so I have a few options:
 
 1. A **root service** (current user, selected tenant)
-2. **Router** — id in the URL (`/incidents/12`)
-3. **Query params** — filters (`?status=Open`)
+2. The **router** — the id goes in the URL (`/incidents/12`)
+3. **Query params** — for filters (`?status=Open`)
 
-If the user should be able to refresh or share the link, put it in the **URL**, not only in memory.
+If the user should be able to refresh or share the link, it belongs in the **URL**, not only in memory.
 
 **Example:**
 
@@ -172,13 +172,13 @@ incidentId = toSignal(this.route.paramMap.pipe(map(p => Number(p.get('id')))));
 
 **Real-world example:**
 
-User clicks incident 12 on the list (`/incidents`). Detail is `/incidents/12`. Refresh still works. A service-only selected id would be lost on refresh.
+The user clicks incident 12 on the list (`/incidents`). The detail page is `/incidents/12`. A refresh still works. If the selected id lived only in a service, it would be lost on refresh.
 
 **Cross-question:** Selected row highlight plus deep link?
 
 **Cross-answer:**
 
-URL holds the id. The list **also** reads the same param to highlight the row. One source of truth: the route.
+The URL holds the id. The list **also** reads the same param to highlight the row. That way there's one source of truth: the route.
 
 ---
 
@@ -186,7 +186,7 @@ URL holds the id. The list **also** reads the same param to highlight the row. O
 
 **Answer:**
 
-An `AuthService` with a signal or `BehaviorSubject`. Login writes the user. Header reads it. Logout sets it to null. On app start, restore from token/cookie once.
+Through an `AuthService` that holds a signal or a `BehaviorSubject`. Login writes the user, and the header reads it. Logout sets it back to null. When the app starts, I restore the user once from the token or cookie.
 
 **Example:**
 
@@ -215,13 +215,13 @@ export class AuthService {
 
 **Real-world example:**
 
-Login is a full-screen route. The top bar is in `AppComponent`. They never nest. After login you still see “Hi, Mukesh” in the bar because both use `AuthService`.
+Login is a full-screen route. The top bar lives in `AppComponent`. They never nest. But after login, you still see “Hi, Mukesh” in the bar, because both use `AuthService`.
 
 **Cross-question:** Refresh the browser — name gone?
 
 **Cross-answer:**
 
-Memory is empty. On startup, read the stored token, call `/api/me` (or decode safe claims), then `loginSucceeded`. Header waits until that finishes (guard or initializer).
+After a refresh, memory is empty. So on startup I read the stored token, call `/api/me` (or decode the safe claims), and then call `loginSucceeded`. The header waits until that's done, using a guard or an initializer.
 
 ---
 
@@ -229,11 +229,11 @@ Memory is empty. On startup, read the stored token, call `/api/me` (or decode sa
 
 **Answer:**
 
-Do not hope B is still alive. Options:
+I don't count on B still being alive. I have a few options:
 
 1. **Re-fetch** when B becomes active (`OnInit` / `router` events)
-2. A **shared store**: A calls API, then `incidentsCreated.next()`, B listens and reloads
-3. If both are on screen (shell + dashboard widget), a service signal of counts
+2. A **shared store**: A calls the API, then `incidentsCreated.next()`, and B listens and reloads
+3. If both are on screen (shell + dashboard widget), a service signal that holds the counts
 
 **Example:**
 
@@ -253,13 +253,13 @@ this.events.changed.pipe(startWith(void 0), switchMap(() => this.api.counts()))
 
 **Real-world example:**
 
-“New incident” is a modal. KPI cards sit on the home dashboard. After save, cards must go from 4 to 5 without a full app reload. The create flow publishes `changed`. Dashboard reloads counts.
+“New incident” is a modal, and the KPI cards sit on the home dashboard. After saving, the cards must go from 4 to 5 without reloading the whole app. The create flow publishes `changed`, and the dashboard reloads the counts.
 
 **Cross-question:** Why not `window.location.reload()`?
 
 **Cross-answer:**
 
-Slow, loses other UI state, looks amateur. Reload only the number.
+It's slow, it loses other UI state, and it looks amateur. I reload only the number.
 
 ---
 
@@ -267,7 +267,7 @@ Slow, loses other UI state, looks amateur. Reload only the number.
 
 **Answer:**
 
-No. `ViewChild` only sees a child in **this** template. Unrelated A and B are not in each other’s template. Use a service. `ViewChild` is for “I need the child map widget to `resize()` after the side panel opens.”
+No. `ViewChild` only sees a child in **this** component's template. Unrelated A and B aren't in each other's template, so I use a service. `ViewChild` is for cases like “I need the child map widget to `resize()` after the side panel opens.”
 
 **Example:**
 
@@ -282,13 +282,13 @@ onSidebarToggle() {
 
 **Real-world example:**
 
-A Leaflet map inside a ticket page. Opening the notes drawer changes width. The page calls `map.resize()`. The **header** cannot `ViewChild` that map. If the header needed to trigger resize, use a service event `layout.changed`.
+There's a Leaflet map inside a ticket page. Opening the notes drawer changes its width, so the page calls `map.resize()`. The **header** can't `ViewChild` that map. If the header needed to trigger a resize, I'd use a service event like `layout.changed`.
 
 **Cross-question:** `document.querySelector` from A to B?
 
 **Cross-answer:**
 
-No. Breaks encapsulation, SSR, and tests.
+No. It breaks encapsulation, SSR, and tests.
 
 ---
 
@@ -296,7 +296,7 @@ No. Breaks encapsulation, SSR, and tests.
 
 **Answer:**
 
-Use it for **rare events** (“incident saved”, “toast”). Do not use it for all state. If B always needs the **current** value (selected id, current user), use a `signal` or `BehaviorSubject`, not a plain `Subject` (late subscribers miss it).
+No. I use it for **rare events**, like “incident saved” or a toast. I don't use it for all state. If B always needs the **current** value (selected id, current user), I use a `signal` or a `BehaviorSubject`, not a plain `Subject`, because late subscribers miss what a plain `Subject` already sent.
 
 **Example:**
 
@@ -310,13 +310,13 @@ readonly saved$ = new Subject<number>();
 
 **Real-world example:**
 
-Toast “Saved” is an event. Current user in the header is state. Mixing them in one giant `AppEvents` service becomes spaghetti.
+A “Saved” toast is an event. The current user in the header is state. If you mix them in one giant `AppEvents` service, it turns into spaghetti.
 
 **Cross-question:** NgRx vs service?
 
 **Cross-answer:**
 
-Two components and one selected id: a service is enough. Many screens, undo, and complex events: consider a store. Do not start with NgRx for this.
+For two components and one selected id, a service is enough. With many screens, undo, and complex events, I'd consider a store. But I wouldn't start with NgRx for this.
 
 ---
 
@@ -324,7 +324,7 @@ Two components and one selected id: a service is enough. Many screens, undo, and
 
 **Answer:**
 
-The form model lives in a **service** or the parent shell, not inside A only. B calls `service.submit()`. Or wrap both in a parent that holds the `FormGroup`.
+The form model lives in a **service** or the parent shell, not only inside A. B calls `service.submit()`. Another option is to wrap both in a parent that holds the `FormGroup`.
 
 **Example:**
 
@@ -350,13 +350,13 @@ provide: [{ provide: IncidentFormService }]
 
 **Real-world example:**
 
-Wizard: step 1 fields in the main pane, **Save** in the sticky footer. Footer is not a child of the form component. Route-level `IncidentFormService` holds the `FormGroup`.
+Think of a wizard: the step 1 fields are in the main pane, and **Save** is in the sticky footer. The footer isn't a child of the form component. A route-level `IncidentFormService` holds the `FormGroup`.
 
 **Cross-question:** Provide the form service in `root`?
 
 **Cross-answer:**
 
-Then the next visit may still have old values. Provide it on the **route** so leaving the wizard destroys it.
+Then the next visit might still show the old values. I provide it on the **route**, so leaving the wizard destroys it.
 
 ---
 
@@ -364,7 +364,7 @@ Then the next visit may still have old values. Provide it on the **route** so le
 
 **Answer:**
 
-Usually you **mutated** the array (`list.push`) with `OnPush` or a signal that expects a **new** array. Replace the array. Or you updated a nested object with the same reference.
+Usually the array was **mutated** (`list.push`) while using `OnPush` or a signal that expects a **new** array. The fix is to replace the array. Another cause is updating a nested object but keeping the same reference.
 
 **Example:**
 
@@ -379,13 +379,13 @@ this.itemsSignal.update(list => [...list, newItem]);
 
 **Real-world example:**
 
-User adds a comment. The thread uses `OnPush`. `comments.push` leaves the same array reference. The new comment does not show until you click elsewhere. Spread a new array and it appears at once.
+A user adds a comment, and the thread uses `OnPush`. `comments.push` keeps the same array reference, so the new comment doesn't show until you click somewhere else. Spread into a new array and it shows up right away.
 
 **Cross-question:** `detectChanges()` to force it?
 
 **Cross-answer:**
 
-It can hide the bug. Fix the data flow.
+That can hide the bug. I fix the data flow instead.
 
 ---
 
@@ -393,7 +393,7 @@ It can hide the bug. Fix the data flow.
 
 **Answer:**
 
-`HttpClient` Observables are **cold**. Each subscribe = one call. A subscribed in `ngOnInit` and the template also used `async` pipe. Or A and B both called `get()` without sharing.
+`HttpClient` Observables are **cold**, which means every subscribe makes its own call. Maybe A subscribed in `ngOnInit` and the template also used the `async` pipe. Or A and B both called `get()` without sharing it.
 
 **Example:**
 
@@ -404,17 +404,17 @@ readonly incidents$ = this.http.get<Incident[]>('/api/incidents').pipe(
 );
 ```
 
-Or one service method that caches a signal.
+Or use one service method that caches the result in a signal.
 
 **Real-world example:**
 
-Dashboard cards and the table both need incidents. Two `get('/api/incidents')` in `ngOnInit` = two network rows in DevTools. Put the call in a service with `shareReplay` or load once into a signal.
+The dashboard cards and the table both need incidents. Two `get('/api/incidents')` calls in `ngOnInit` means two network rows in DevTools. I put the call in a service with `shareReplay`, or load it once into a signal.
 
 **Cross-question:** `shareReplay` forever?
 
 **Cross-answer:**
 
-Use `refCount: true` so it unsubscribes when nobody listens. For “always latest”, reload on an explicit refresh instead of an infinite cache.
+I use `refCount: true` so it unsubscribes when nobody is listening. If I need the latest data, I reload on an explicit refresh instead of keeping an endless cache.
 
 ---
 
@@ -422,7 +422,7 @@ Use `refCount: true` so it unsubscribes when nobody listens. For “always lates
 
 **Answer:**
 
-Use `switchMap` so the previous HTTP call is cancelled when the text changes. Also `debounceTime` so you do not hit the API every key.
+I use `switchMap`, so the previous HTTP call gets cancelled when the text changes. I also add `debounceTime` so we don't hit the API on every key press.
 
 **Example:**
 
@@ -437,13 +437,13 @@ this.search.valueChanges.pipe(
 
 **Real-world example:**
 
-User types `inc` then `incident`. Slow `inc` returns last and overwrites `incident`. `switchMap` drops the old call. Search box feels correct.
+The user types `inc`, then `incident`. The slow `inc` call comes back last and overwrites the `incident` results. `switchMap` drops the old call, so the search box behaves correctly.
 
 **Cross-question:** `mergeMap`?
 
 **Cross-answer:**
 
-Keeps all calls. Wrong for typeahead. Save-button double-click: use `exhaustMap`.
+It keeps all the calls, so it's wrong for typeahead. For a double-click on a Save button, I'd use `exhaustMap`.
 
 ---
 
@@ -451,7 +451,7 @@ Keeps all calls. Wrong for typeahead. Save-button double-click: use `exhaustMap`
 
 **Answer:**
 
-You subscribed by hand and did not unsubscribe. When the HTTP returns, it writes to a destroyed component.
+The subscription was made by hand and never unsubscribed. When the HTTP call returns, it writes to a component that's already destroyed.
 
 **Example:**
 
@@ -466,13 +466,13 @@ rows = toSignal(this.api.list(), { initialValue: [] });
 
 **Real-world example:**
 
-User opens Incidents, quickly goes to Settings. The list call returns and Angular errors “view destroyed”. `async` pipe, `takeUntilDestroyed`, or `toSignal` fixes it.
+The user opens Incidents and quickly goes to Settings. The list call comes back and Angular throws a “view destroyed” error. The `async` pipe, `takeUntilDestroyed`, or `toSignal` fixes it.
 
 **Cross-question:** `unsubscribe` in `ngOnDestroy`?
 
 **Cross-answer:**
 
-Works. `takeUntilDestroyed()` is shorter and harder to forget.
+That works. `takeUntilDestroyed()` is just shorter and harder to forget.
 
 ---
 
@@ -480,7 +480,7 @@ Works. `takeUntilDestroyed()` is shorter and harder to forget.
 
 **Answer:**
 
-The service was provided on the **lazy route/component**, not `root`. Header is outside the lazy injector, so it got another instance (or none).
+The service was provided on the **lazy route or component**, not in `root`. The header sits outside the lazy injector, so it got a different instance (or none at all).
 
 **Example:**
 
@@ -498,13 +498,13 @@ export class WizardComponent { }
 
 **Real-world example:**
 
-Toasts from “Create incident” (lazy) do not show in the root header because `ToastService` was in the feature `providers` array. Move toast to `root`. Keep wizard state on the wizard.
+Toasts from “Create incident” (a lazy feature) don't show in the root header, because `ToastService` was in the feature's `providers` array. I move the toast service to `root` and keep the wizard state on the wizard.
 
 **Cross-question:** Two “singletons”?
 
 **Cross-answer:**
 
-Yes — two injectors, two objects. That is the usual cause of “I set it but the other screen is empty.”
+Yes — two injectors means two objects. That's the usual cause of “I set it, but the other screen is empty.”
 
 ---
 
@@ -512,7 +512,7 @@ Yes — two injectors, two objects. That is the usual cause of “I set it but t
 
 **Answer:**
 
-Do not put a big object in query params. Store an **id** in the URL. B loads by id from the API (source of truth). A short-lived service cache is OK for “just created, go to detail” but refresh must still load from API.
+I don't put a big object in query params. I put an **id** in the URL, and B loads the data by that id from the API, which is the source of truth. A short-lived service cache is fine for the “just created, go to detail” case, but a refresh still has to load from the API.
 
 **Example:**
 
@@ -529,13 +529,13 @@ ngOnInit() {
 
 **Real-world example:**
 
-Create incident returns id `88`. Navigate to `/incidents/88`. Do not pass the whole incident in router `state` as the only copy — a refresh would be blank.
+Creating an incident returns id `88`. I navigate to `/incidents/88`. I don't pass the whole incident in the router `state` as the only copy, because a refresh would show a blank page.
 
 **Cross-question:** `history.state`?
 
 **Cross-answer:**
 
-Can extra-pass a flash message. Not the record itself.
+It's fine for passing something extra, like a flash message. Not for the record itself.
 
 ---
 
@@ -543,7 +543,7 @@ Can extra-pass a flash message. Not the record itself.
 
 **Answer:**
 
-One service, one signal. Child uses inputs if it is presentational. Chart injects the service **or** receives data from a shell. Prefer: API → service signal → both views.
+One service, one signal. The child uses inputs if it's presentational. The chart either injects the service **or** gets the data from a shell. What I prefer: API → service signal → both views.
 
 **Example:**
 
@@ -559,13 +559,13 @@ export class DashboardStore {
 
 **Real-world example:**
 
-KPI cards and a pie chart on home. Both show “open vs closed”. One `DashboardStore.load()` in the home page. Cards and chart read `counts()`. No second HTTP.
+The home page has KPI cards and a pie chart, and both show “open vs closed”. The home page calls `DashboardStore.load()` once. The cards and the chart both read `counts()`. No second HTTP call.
 
 **Cross-question:** Each widget loads itself?
 
 **Cross-answer:**
 
-Then you get 4 calls. Fine if they are different APIs. Same API: load once.
+Then you get 4 calls. That's fine if they're different APIs. If it's the same API, load it once.
 
 ---
 
@@ -573,7 +573,7 @@ Then you get 4 calls. Fine if they are different APIs. Same API: load once.
 
 **Answer:**
 
-The **hub connection** lives in a root service. Components subscribe to events. When a message arrives, update a signal. All listeners refresh. Do not open one WebSocket per component.
+The **hub connection** lives in a root service, and components subscribe to its events. When a message arrives, the service updates a signal and all the listeners refresh. I don't open one WebSocket per component.
 
 **Example:**
 
@@ -592,13 +592,13 @@ export class IncidentHub {
 
 **Real-world example:**
 
-Agent A closes a ticket. Agent B’s board (another browser) should move the card. One hub service. Board and a small “live” toast both read `live()`.
+Agent A closes a ticket. Agent B's board, in another browser, should move the card. There's one hub service, and both the board and a small “live” toast read `live()`.
 
 **Cross-question:** Tenant isolation?
 
 **Cross-answer:**
 
-Server must send only that tenant’s events. The Angular service is not a security boundary.
+The server must send only that tenant's events. The Angular service is not a security boundary.
 
 ---
 
@@ -616,28 +616,28 @@ Server must send only that tenant’s events. The Angular service is not a secur
 | Many complex events | Store (NgRx) | Large app |
 | Live server push | Hub service | SignalR |
 
-Default for **no relation**: **root service**. Default if it must survive refresh: **URL**.
+When there's **no relation**, my default is a **root service**. If it has to survive a refresh, my default is the **URL**.
 
 **Example:**
 
-“Selected incident” on the same layout: service. “Which incident is open”: `/incidents/12`.
+“Selected incident” on the same layout goes in a service. “Which incident is open” goes in the URL: `/incidents/12`.
 
 **Real-world example:**
 
-Incident product: header user = `AuthService`. List → detail = router id. List → right drawer on the same page = parent or service. That mix is normal.
+In the incident product, the header user comes from `AuthService`. List → detail uses the router id. List → right drawer on the same page uses the parent or a service. Mixing these is normal.
 
 **Cross-question:** What is the wrong default?
 
 **Cross-answer:**
 
-`@Input` between unrelated components, `window` globals, or NgRx for two screens.
+Trying `@Input` between unrelated components, using `window` globals, or bringing in NgRx for two screens.
 
 
 ---
 ## Additional Questions
 ### Q26. A PrimeNG table becomes slow with thousands of rows. What do you do?
-**Answer:** I avoid rendering everything. I use server-side pagination/filtering, stable tracking, and virtual scrolling when the UX needs it. I also check whether the API is returning more data than the screen needs.
+**Answer:** I avoid rendering everything. I use server-side pagination and filtering, stable tracking, and virtual scrolling when the UX needs it. I also check whether the API is sending more data than the screen needs.
 ### Q27. A component keeps making the same API call. How do you debug it?
-**Answer:** I check subscriptions, effects, route events and template async pipes. Then I see the browser Network tab. I make the data flow have one clear owner.
+**Answer:** I check subscriptions, effects, route events, and async pipes in the template. Then I look at the browser's Network tab. I make sure the data flow has one clear owner.
 ### Q28. The UI updates after one API call but not another. What do you check?
-**Answer:** I check whether state was mutated in place, whether the component uses OnPush, and whether a signal was actually updated. I reproduce it with a small state change before changing change detection manually.
+**Answer:** I check whether state was mutated in place, whether the component uses OnPush, and whether a signal was actually updated. I reproduce it with a small state change before I start changing change detection by hand.

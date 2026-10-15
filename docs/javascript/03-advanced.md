@@ -8,13 +8,13 @@ Engine, memory, security. Short words, still correct.
 
 **Answer:**
 
-Parse, bytecode, interpret, then JIT-compile hot functions. If you change object shapes, it may de-optimize. Stable shapes help. I do not micro-manage this in a CRUD app.
+The engine parses the code, turns it into bytecode, and interprets it. Then it JIT-compiles the hot functions, meaning it compiles the code that runs a lot into fast machine code while the app is running. If you change object shapes, it may de-optimize that code. Stable shapes help. In a CRUD app, I do not micro-manage this.
 
 **Cross-question:** Hidden class / shape?
 
 **Cross-answer:**
 
-Objects with the same fields in the same order share a shape. Adding fields in random order on a hot path can slow things down.
+Objects with the same fields in the same order share a shape. If you add fields in random order on a hot path, it can slow things down.
 
 ---
 
@@ -22,13 +22,13 @@ Objects with the same fields in the same order share a shape. Adding fields in r
 
 **Answer:**
 
-Stack for calls, heap for objects, GC cleans. Leaks: globals, caches with no limit, listeners, detached DOM, closures.
+The stack is for function calls, the heap is for objects, and the garbage collector (GC) cleans up what is no longer used. Common leaks are globals, caches with no limit, listeners, detached DOM nodes and closures.
 
 **Cross-question:** How do you find a leak?
 
 **Cross-answer:**
 
-Chrome heap snapshot, compare before and after a navigation, look for growing arrays and detached nodes.
+I take a heap snapshot in Chrome, compare before and after a navigation, and look for arrays that keep growing and detached nodes.
 
 ---
 
@@ -36,13 +36,13 @@ Chrome heap snapshot, compare before and after a navigation, look for growing ar
 
 **Answer:**
 
-Same idea: stack, microtasks, tasks. Browser also paints and uses `requestAnimationFrame`. Node has extra phases. For an Angular job I focus on the browser.
+The idea is the same: a call stack, microtasks and tasks. The browser also paints and has `requestAnimationFrame`. Node has some extra phases. For an Angular job, I focus on the browser.
 
 **Cross-question:** `rAF` vs `setTimeout` for animation?
 
 **Cross-answer:**
 
-`rAF` follows frames and calms down in background tabs. Timers drift.
+`rAF` follows the screen's frames and slows down in background tabs. Timers drift.
 
 ---
 
@@ -50,13 +50,13 @@ Same idea: stack, microtasks, tasks. Browser also paints and uses `requestAnimat
 
 **Answer:**
 
-Workers are extra threads with **no DOM**. They talk with messages. `async` does not add threads. Heavy CPU can go to a worker or WASM.
+Workers are extra threads, but with **no DOM** access. They talk to the main thread with messages. `async` does not add threads. Heavy CPU work can go to a worker or to WASM.
 
 **Cross-question:** Angular in a worker?
 
 **Cross-answer:**
 
-Not components. Maybe pure TS logic. UI stays on the main thread.
+Not components. Maybe pure TS logic. The UI stays on the main thread.
 
 ---
 
@@ -64,13 +64,13 @@ Not components. Maybe pure TS logic. UI stays on the main thread.
 
 **Answer:**
 
-Clone handles Date, Map, ArrayBuffer. Fails on functions and DOM nodes. Workers use this. Transfer an ArrayBuffer to avoid copying 50 MB.
+`structuredClone` handles Date, Map and ArrayBuffer. It fails on functions and DOM nodes. Workers use the same mechanism. You can transfer an ArrayBuffer to avoid copying something like 50 MB.
 
 **Cross-question:** Transfer vs copy?
 
 **Cross-answer:**
 
-Transfer: original buffer is empty after. Copy: two memories.
+With transfer, the original buffer is empty afterwards. With copy, you have two copies in memory.
 
 ---
 
@@ -78,13 +78,13 @@ Transfer: original buffer is empty after. Copy: two memories.
 
 **Answer:**
 
-Intercept get/set. Vue 3 uses this. Slower than a plain object. Some built-ins ignore traps. I do not proxy everything.
+A Proxy lets you intercept get and set on an object. Vue 3 uses this. It is slower than a plain object, and some built-ins ignore the traps. So I do not proxy everything.
 
 **Cross-question:** Proxy a Map?
 
 **Cross-answer:**
 
-Easy to get wrong because of internal slots. Wrap instead of a naive proxy.
+It is easy to get wrong because of internal slots. I wrap it instead of using a naive proxy.
 
 ---
 
@@ -92,13 +92,13 @@ Easy to get wrong because of internal slots. Wrap instead of a naive proxy.
 
 **Answer:**
 
-A pointer that does not keep the object alive. Finalizers run “sometime”. I do not put business logic there. Prefer explicit dispose.
+It is a reference that does not keep the object alive. Finalizers run “sometime”, with no promise of when. So I do not put business logic there. I prefer an explicit dispose.
 
 **Cross-question:** Perfect cache?
 
 **Cross-answer:**
 
-No. You cannot know when GC runs. Still need a max size.
+No. You cannot know when GC will run. You still need a max size.
 
 ---
 
@@ -106,13 +106,13 @@ No. You cannot know when GC runs. Still need a max size.
 
 **Answer:**
 
-Most engines do not guarantee tail-call wipe of the stack. Deep recursion throws. I use a loop for big trees.
+Most engines do not guarantee that a tail call clears the stack. So deep recursion throws. For big trees I use a loop.
 
 **Cross-question:** 10 nodes vs 10,000?
 
 **Cross-answer:**
 
-Small: recursion is fine. Huge: iterative.
+For a small tree, recursion is fine. For a huge one, I go iterative.
 
 ---
 
@@ -120,15 +120,15 @@ Small: recursion is fine. Huge: iterative.
 
 **Answer:**
 
-XSS: attacker script on my origin. Sources: `innerHTML`, `eval`, `javascript:` URLs.
+XSS is when an attacker's script runs on my origin. Common sources are `innerHTML`, `eval` and `javascript:` URLs.
 
-Pollution: merge `__proto__` into `Object.prototype`. Use `Object.create(null)` or a safe merge.
+Prototype pollution is when merging an object with `__proto__` ends up changing `Object.prototype`. I use `Object.create(null)` or a safe merge.
 
 **Cross-question:** Is `JSON.parse` enough?
 
 **Cross-answer:**
 
-It does not run code. If I blindly merge the object, I can still pollute. Validate shape.
+It does not run code. But if I blindly merge the result, I can still pollute the prototype. So I validate the shape.
 
 ---
 
@@ -136,13 +136,13 @@ It does not run code. If I blindly merge the object, I can still pollute. Valida
 
 **Answer:**
 
-Runs a string as code. XSS and slower. CSP often blocks it. I use `obj[key]` with an allow-list.
+It runs a string as code. That opens the door to XSS, and it is slower. CSP often blocks it anyway. Instead I use `obj[key]` with an allow-list.
 
 **Cross-question:** Dynamic keys?
 
 **Cross-answer:**
 
-Allow-list. Never `eval('obj.' + key)`.
+Use an allow-list. Never `eval('obj.' + key)`.
 
 ---
 
@@ -150,13 +150,13 @@ Allow-list. Never `eval('obj.' + key)`.
 
 **Answer:**
 
-Methods on the prototype: shared. Arrow fields: per instance, `this` is fixed. I use arrows for callbacks I pass around.
+Methods live on the prototype, so they are shared. Arrow fields are created per instance, and their `this` is fixed. I use arrows for callbacks that I pass around.
 
 **Cross-question:** Passing `this.method` to a child?
 
 **Cross-answer:**
 
-Can lose `this`. Arrow or bind.
+It can lose `this`. Use an arrow or bind.
 
 ---
 
@@ -164,13 +164,13 @@ Can lose `this`. Arrow or bind.
 
 **Answer:**
 
-JS numbers are doubles. `long` ids can lose precision. The API should send big ids as **strings**. Money: integer cents or a decimal library, not `0.1 + 0.2`.
+JS numbers are doubles, so `long` ids can lose precision. The API should send big ids as **strings**. For money, use integer cents or a decimal library, not plain floats like `0.1 + 0.2`.
 
 **Cross-question:** `0.1 + 0.2`?
 
 **Cross-answer:**
 
-Not `0.3` exactly. Never compare money with `===` on floats.
+It is not exactly `0.3`. So never compare money with `===` on floats.
 
 ---
 
@@ -178,13 +178,13 @@ Not `0.3` exactly. Never compare money with `===` on floats.
 
 **Answer:**
 
-`subscribe` adds a listener, returns `unsubscribe`. When I `next`, I loop a copy of the list so unsubscribe mid-notify is safe. Cold vs hot is a choice.
+`subscribe` adds a listener and returns an `unsubscribe` function. When I call `next`, I loop over a copy of the listener list, so unsubscribing in the middle of a notify is safe. Cold vs hot is a design choice.
 
 **Cross-question:** vs an array of callbacks?
 
 **Cross-answer:**
 
-The contract: unsubscribe, error, complete. Arrays of callbacks usually leak.
+The difference is the contract: unsubscribe, error and complete. A plain array of callbacks usually leaks.
 
 ---
 
@@ -192,13 +192,13 @@ The contract: unsubscribe, error, complete. Arrays of callbacks usually leak.
 
 **Answer:**
 
-Silent failures become throws. `this` is undefined. Duplicate params error.
+Things that failed silently now throw. `this` is undefined in a plain call. Duplicate parameter names are an error.
 
 **Cross-question:** `'use strict'` in a module?
 
 **Cross-answer:**
 
-Modules already are. The pragma is extra.
+Modules are already strict. The pragma is not needed.
 
 ---
 
@@ -206,7 +206,7 @@ Modules already are. The pragma is extra.
 
 **Answer:**
 
-SharedArrayBuffer plus Atomics for real threads. Rare in Angular CRUD. I mention it only if they ask about workers and shared memory.
+SharedArrayBuffer plus Atomics is for real threads. It is rare in Angular CRUD apps. I only bring it up if they ask about workers and shared memory.
 
 **Cross-question:** Race on a normal object from two workers?
 
@@ -220,13 +220,13 @@ Workers do not share objects unless you use shared buffers. You pass clones or t
 
 **Answer:**
 
-Check language features vs the target in `tsconfig`. Polyfills. Look at the actual error. Do not guess “cache”.
+I check which language features we use against the target in `tsconfig`, and whether we need polyfills. I look at the actual error. I do not just guess “it is the cache”.
 
 **Cross-question:** Optional chaining in an unsupported browser?
 
 **Cross-answer:**
 
-Syntax error, whole file dies. The bundler must transpile for that target, or we drop the browser.
+It is a syntax error, so the whole file dies. The bundler must transpile for that target, or we drop that browser.
 
 ---
 
@@ -234,13 +234,13 @@ Syntax error, whole file dies. The bundler must transpile for that target, or we
 
 **Answer:**
 
-After tasks, the browser may style, layout, paint. Heavy JS blocks paint. I break huge loops, use workers, or `requestIdleCallback` for non-urgent work.
+After tasks run, the browser may do style, layout and paint. Heavy JS blocks paint. So I break up huge loops, use workers, or use `requestIdleCallback` for work that is not urgent.
 
 **Cross-question:** Layout thrash?
 
 **Cross-answer:**
 
-Read layout, write DOM, read layout, write… in a loop. The browser recalculates again and again. Batch reads then writes.
+That is when you read layout, write to the DOM, read layout, write… in a loop. The browser has to recalculate again and again. The fix is to batch all the reads, then do the writes.
 
 ---
 
@@ -262,7 +262,7 @@ I rewrite it when I touch that file.
 
 **Answer:**
 
-A normal function: `this` is the element. Arrow: outer `this`. Angular templates call with the component. I do not mix these without thinking.
+With a normal function, `this` is the element. With an arrow, it is the outer `this`. Angular templates call handlers with the component as `this`. I do not mix these without thinking.
 
 **Cross-question:** `addEventListener` and remove?
 
@@ -276,13 +276,13 @@ I must pass the **same** function reference to `removeEventListener`. An inline 
 
 **Answer:**
 
-`type="module"` is deferred by default, strict, and CORS applies to the file. Classic scripts are different. Bundlers hide this. I still know it for a tiny page without Angular.
+A `type="module"` script is deferred by default, runs in strict mode, and CORS applies to the file. Classic scripts behave differently. Bundlers hide all this, but I still know it for a tiny page without Angular.
 
 **Cross-question:** Import maps?
 
 **Cross-answer:**
 
-Browser can map `'rxjs'` to a URL. Handy without a bundler. Most Angular apps still bundle.
+The browser can map `'rxjs'` to a URL. That is handy without a bundler. Most Angular apps still bundle.
 
 ---
 
@@ -290,13 +290,13 @@ Browser can map `'rxjs'` to a URL. Handy without a bundler. Most Angular apps st
 
 **Answer:**
 
-An object with a `then` function. `await` will treat it like a promise. That is how some libraries hook in. A random object with `then: true` can confuse `await`.
+An object with a `then` function. `await` will treat it like a promise. That is how some libraries hook in. The catch is that any ordinary object with a `then` method gets treated the same way, which can be confusing. A `then` that is not a function, like `then: true`, is ignored.
 
 **Cross-question:** Danger?
 
 **Cross-answer:**
 
-If user JSON has a `then` function (rare) or a polluted prototype, `await` might call it. Another reason not to blindly await unknown objects.
+Plain JSON from a user can't contain functions, so that part is safe. The real risk is a polluted prototype: if someone manages to add a `then` function to `Object.prototype`, `await` will call it. Another reason not to blindly await unknown objects.
 
 ---
 
@@ -304,13 +304,13 @@ If user JSON has a `then` function (rare) or a polluted prototype, `await` might
 
 **Answer:**
 
-Modern engines use generational GC: young objects die fast, old ones are scanned less often. I cannot call `gc()` in production JS. I just drop references.
+Modern engines use generational GC: young objects die fast, and old ones are scanned less often. I cannot call `gc()` in production JS. I just drop references.
 
 **Cross-question:** `delete obj.x` vs set null?
 
 **Cross-answer:**
 
-Setting null/undefined is enough. `delete` can also change the shape and be slower. For a leak, the real issue is still holding the whole object.
+Setting it to null/undefined is enough. `delete` can also change the object's shape and be slower. And for a leak, the real problem is still that something holds on to the whole object.
 
 ---
 
@@ -318,7 +318,7 @@ Setting null/undefined is enough. `delete` can also change the shape and be slow
 
 **Answer:**
 
-A sanitizer library, allow-list of tags, no scripts, Angular sanitizer, never bypass. Prefer markdown to HTML if the product allows it.
+I use a sanitizer library with an allow-list of tags and no scripts, plus Angular's sanitizer, and I never bypass it. If the product allows it, I prefer markdown over HTML.
 
 **Cross-question:** `innerHTML = userHtml`?
 
@@ -332,13 +332,13 @@ No.
 
 **Answer:**
 
-`Date.now` is wall clock, can jump. `performance.now` is monotonic, good for measuring a function. I use it when I actually measure.
+`Date.now` is the wall clock, and it can jump. `performance.now` is monotonic, meaning it only moves forward, so it is good for measuring a function. I use it when I actually measure something.
 
 **Cross-question:** Measure in production?
 
 **Cross-answer:**
 
-Sample. Do not `console.log` every request in a hot path.
+I sample. I do not `console.log` every request in a hot path.
 
 ---
 
@@ -346,20 +346,20 @@ Sample. Do not `console.log` every request in a hot path.
 
 **Answer:**
 
-Not the average click, the slow 1%. Caused by GC pauses, huge lists, a cold cache, a third-party script. I look at p95, not only the happy demo.
+It is not the average click, it is the slow 1%. It comes from things like GC pauses, huge lists, a cold cache, or a third-party script. I look at p95, not only the happy demo.
 
 **Cross-question:** How would you improve a slow list?
 
 **Cross-answer:**
 
-Virtual scroll, track by id, OnPush/signals, less work per row, fewer watchers. Profile first so I do not guess.
+Virtual scroll, track by id, OnPush or signals, less work per row, and fewer watchers. But I profile first, so I am not guessing.
 
 
 ---
 ## Additional Questions
 ### Q26. What is event delegation?
-**Answer:** Instead of adding a listener to every child, I listen on a parent and inspect the event target. It is useful for large dynamic lists.
+**Answer:** Instead of adding a listener to every child, I listen on the parent and check the event target. It is useful for large, dynamic lists.
 ### Q27. What is a microtask?
-**Answer:** Promise callbacks and queueMicrotask run as microtasks. The event loop drains microtasks before moving to the next task, so a huge microtask chain can still block the UI.
+**Answer:** Promise callbacks and queueMicrotask run as microtasks. The event loop runs all the microtasks before it moves to the next task, so a huge microtask chain can still block the UI.
 ### Q28. Why can `JSON.stringify` be a poor deep-clone strategy?
-**Answer:** It loses things such as undefined, functions, Map and Set, and it changes some special values. For supported data, structuredClone is a better general tool.
+**Answer:** It loses things like undefined, functions, Map and Set, and it changes some special values. For supported data, structuredClone is a better general tool.

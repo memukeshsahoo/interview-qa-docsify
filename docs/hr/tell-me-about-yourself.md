@@ -12,7 +12,7 @@ Speak for **60–90 seconds**. Do not read your whole CV.
 
 You can fill in the blanks. Keep it short.
 
-> I am a full-stack developer. I work with C#, ASP.NET Core, and Angular. In my day job I build APIs and screens — login, lists, dashboards, that kind of work.
+> I am a full-stack developer. I work with C#, ASP.NET Core, and Angular. Day to day I build APIs and the screens that use them — login, lists, dashboards, that kind of work.
 >
 > Right now I work on NriCare, a care-service product. NR users book service providers through a main association. I have worked on the ASP.NET Core API: JWT login, wallets and holds, bookings and quotations, Razorpay top-up, SignalR chat, and TickerQ background jobs. The UI is Angular. The database is PostgreSQL with EF Core.
 >
@@ -22,7 +22,7 @@ You can fill in the blanks. Keep it short.
 
 **Cross-answer:**
 
-> I built the booking and wallet flow. When an NR user books, we lock the wallet, hold the amount, and open a chat with the provider. The hard part was not the screen. The hard part was not double-spending, splitting payment on complete, and keeping one association from seeing another’s rows.
+> I built the booking and wallet flow. When an NR user books, we lock the wallet, hold the amount, and open a chat with the provider. The screen was not the hard part. The hard part was avoiding double-spending, splitting the payment when the job is completed, and making sure one association never sees another’s rows.
 
 ---
 
@@ -40,7 +40,7 @@ Pick three points, newest first. Skip school unless they ask.
 
 Stay kind. Do not blame people.
 
-> I want a place where I can own bigger backend work — design, speed, helping others — and still ship Angular screens. I am not running away from a person. I want a better fit for growth.
+> I want a place where I can own bigger backend work — design, performance, helping others — and still ship Angular screens. I am not running away from a person. I want a better fit for growth.
 
 ---
 
@@ -50,7 +50,7 @@ Stay kind. Do not blame people.
 
 Give two, with a small proof.
 
-> First, I can turn a fuzzy request into a small slice that ships: table, API, screen, and who is allowed to use it. Second, I debug in a calm order. I reproduce it, I find which layer is wrong — UI, API, EF, or database — then I fix the real cause, not a patch on top.
+> First, I can turn a fuzzy request into a small slice that ships: table, API, screen, and who is allowed to use it. Second, I debug in a calm order. I reproduce the problem, I find which layer is wrong — UI, API, EF, or database — then I fix the real cause, not a patch on top.
 
 **Cross-question:** When did one of those strengths go wrong?
 
@@ -74,7 +74,7 @@ Do not say you are bad at the main skill of the job.
 
 **Cross-answer:**
 
-> Delivers what he promises, asks questions early, sometimes too picky in code review. I am trying to keep comments in line with real risk.
+> Delivers what he promises, asks questions early, and is sometimes too picky in code review. I am working on keeping my comments in line with the real risk.
 
 ---
 
@@ -128,7 +128,7 @@ Use a story: situation, what you did, result.
 
 **Answer:**
 
-> I want to be the person the team trusts with the hard path: speed, security, and design reviews. I still want to write code, not only slides. Lead is fine if it means helping the team, not leaving the keyboard.
+> I want to be the person the team trusts with the hard parts: performance, security, and design reviews. I still want to write code, not only slides. Being a lead is fine if it means helping the team, not leaving the keyboard.
 
 **Cross-question:** Do you want to be a manager?
 
@@ -176,13 +176,13 @@ Always yes. Try three:
 
 Pick one story with a result.
 
-> I am proud of the wallet hold on booking. Users used to worry money would leave the wallet before the job was done. We hold the amount, chat and quotation can still change, and we only split payment when the work is completed. Support calls about “I was charged twice” went down because release uses an idempotency key.
+> I am proud of the wallet hold on booking. Users used to worry money would leave the wallet before the job was done. We hold the amount, the chat and quotation can still change, and we only split the payment when the work is completed. Support calls about “I was charged twice” went down because release uses an idempotency key.
 
 **Cross-question:** What would you do differently?
 
 **Cross-answer:**
 
-> I would agree “available balance” with the product first. Gross `Balance` vs `Balance minus holds` confused people. The code was doing both in different screens. One definition would have saved support time.
+> I would agree on what “available balance” means with the product team first. Gross `Balance` vs `Balance minus holds` confused people. The code was doing both in different screens. One definition would have saved support time.
 
 ---
 
@@ -190,7 +190,7 @@ Pick one story with a result.
 
 **Answer:**
 
-> I cut scope, not quality of the risky parts. We ship the smallest useful version: one screen, one API, auth on. Nice-to-haves go to the next sprint. I say the trade-off out loud so nobody is surprised.
+> I cut scope, not the quality of the risky parts. We ship the smallest useful version: one screen, one API, auth on. Nice-to-haves go to the next sprint. I say the trade-off out loud so nobody is surprised.
 
 **Cross-question:** Have you ever missed a date?
 

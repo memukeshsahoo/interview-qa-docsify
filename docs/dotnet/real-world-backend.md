@@ -14,7 +14,7 @@ First I reproduce it and measure where the time goes: application code, database
 
 **Cross-answer:**
 
-Check the generated SQL, execution plan, indexes, filters, joins, and how much data is loaded. I also check for N+1 queries.
+I check the generated SQL, the execution plan, indexes, filters, joins, and how much data is loaded. I also look for N+1 queries.
 
 ---
 
@@ -22,13 +22,13 @@ Check the generated SQL, execution plan, indexes, filters, joins, and how much d
 
 **Answer:**
 
-I would not return everything by default. I would add pagination, filtering and sorting. I would project only the fields the UI needs and use AsNoTracking for read-only queries.
+I would not return everything by default. I would add pagination, filtering and sorting. I would select only the fields the UI needs, and use AsNoTracking for read-only queries.
 
 **Cross-question:** Why not just increase the server timeout?
 
 **Cross-answer:**
 
-That hides the problem. Large responses still consume database, memory and network resources.
+That just hides the problem. Large responses still use up database, memory and network resources.
 
 ---
 
@@ -36,7 +36,7 @@ That hides the problem. Large responses still consume database, memory and netwo
 
 **Answer:**
 
-I use optimistic concurrency, for example a PostgreSQL xmin-based concurrency token or another version column. If the version changed before my update, EF throws a concurrency exception. I return a clear conflict response and ask the client to reload.
+I use optimistic concurrency. That means I don't lock the row; I just check that nobody changed it before I save. For example, I use a PostgreSQL xmin-based concurrency token or another version column. If the version changed before my update, EF throws a concurrency exception. I return a clear conflict response and ask the client to reload.
 
 **Cross-question:** Is last-write-wins always okay?
 
@@ -64,7 +64,7 @@ No. Two requests can both pass the check. The database unique constraint is the 
 
 **Answer:**
 
-I normally do not make the HTTP request depend on the email being sent successfully. I save an outbox record in the same transaction as the business change. A background worker sends the email and retries failures.
+Normally I don't make the HTTP request depend on the email going out. Instead, I save an outbox record in the same transaction as the business change. A background worker sends the email and retries failures.
 
 **Cross-question:** Why not send the email before SaveChanges?
 
@@ -106,13 +106,13 @@ No. DbContext is normally scoped because it represents a unit of work and is not
 
 **Answer:**
 
-I accept a CancellationToken and pass it to EF and external async operations. If the client disconnects, the server can stop unnecessary work.
+I accept a CancellationToken and pass it down to EF and to external async calls. That way, if the client disconnects, the server can stop work nobody is waiting for.
 
 **Cross-question:** Should I catch OperationCanceledException and return 500?
 
 **Cross-answer:**
 
-No. Cancellation is normally expected control flow. I do not treat it like an application failure.
+No. Cancellation is normal, expected control flow. I don't treat it like an application failure.
 
 ---
 
@@ -120,13 +120,13 @@ No. Cancellation is normally expected control flow. I do not treat it like an ap
 
 **Answer:**
 
-Only retry operations that are safe to retry or are protected by idempotency. I use limited retries with backoff and timeouts. I do not retry every exception forever.
+I only retry operations that are safe to retry, or that are protected by idempotency. I use a limited number of retries, with backoff and timeouts. I don't retry every exception forever.
 
 **Cross-question:** Should a payment capture always be retried automatically?
 
 **Cross-answer:**
 
-Only when the provider contract says the operation is safely retryable, ideally with an idempotency mechanism.
+Only when the provider's contract says the operation is safe to retry, ideally with an idempotency mechanism.
 
 ---
 
@@ -140,7 +140,7 @@ Production has different data volume, indexes, statistics, hardware and concurre
 
 **Cross-answer:**
 
-No. Indexes help specific access patterns and also add write and storage cost.
+No. An index helps specific access patterns, and it also adds write and storage cost.
 
 ---
 
@@ -148,7 +148,7 @@ No. Indexes help specific access patterns and also add write and storage cost.
 
 **Answer:**
 
-I would keep one shared notification entity with UserId, Module, Type, Title, Message, ReferenceId, IsRead and timestamps. The module and reference identify where the notification should navigate. Module-specific business data stays outside the shared notification table.
+I would keep one shared notification entity with UserId, Module, Type, Title, Message, ReferenceId, IsRead and timestamps. The module and reference tell the app where to go when the user opens the notification. Module-specific business data stays outside the shared notification table.
 
 **Cross-question:** Should every module have its own notification table?
 
@@ -162,7 +162,7 @@ Not if the lifecycle and delivery model are the same. One shared entity is simpl
 
 **Answer:**
 
-I would treat money changes as ledger operations, not just changing a balance. The balance update and transaction records should be atomic. For holds and releases, I would use an idempotency key and database constraints to prevent duplicates.
+I would treat every money change as a ledger entry, not just an edit to a balance. The balance update and transaction records should be atomic. For holds and releases, I would use an idempotency key and database constraints to prevent duplicates.
 
 **Cross-question:** Why not only store the current balance?
 
@@ -176,7 +176,7 @@ A balance alone does not give a reliable audit trail. A ledger lets us understan
 
 **Answer:**
 
-The database must enforce the concurrency rule. Depending on the operation, I can use PostgreSQL FOR UPDATE, an atomic conditional update, or optimistic concurrency. Application-level locks alone are not enough when multiple API servers are running.
+The database has to enforce the concurrency rule. Depending on the operation, I can use PostgreSQL FOR UPDATE, an atomic conditional update, or optimistic concurrency. Application-level locks alone are not enough when multiple API servers are running.
 
 **Cross-question:** Why is SemaphoreSlim not enough?
 
@@ -190,13 +190,13 @@ It only coordinates threads inside one application process. It cannot coordinate
 
 **Answer:**
 
-I use a meaningful HTTP status and a stable error response. For example, 409 Conflict can represent a state conflict such as trying to accept an already accepted quotation. I avoid returning raw exception messages or database errors.
+I return a meaningful HTTP status and an error response with a stable shape. For example, 409 Conflict fits a state conflict, like trying to accept a quotation that is already accepted. I avoid returning raw exception messages or database errors.
 
 **Cross-question:** 400 or 409?
 
 **Cross-answer:**
 
-400 is useful when the request itself is invalid. 409 is useful when the request conflicts with the current state of the resource.
+I use 400 when the request itself is invalid. I use 409 when the request is fine but conflicts with the current state of the resource.
 
 ---
 
@@ -204,7 +204,7 @@ I use a meaningful HTTP status and a stable error response. For example, 409 Con
 
 **Answer:**
 
-I check whether filtering and projection happen in SQL, whether the query loads unnecessary navigation properties, whether pagination is applied before ToListAsync, and whether indexes support the filters and ordering. For important queries I inspect generated SQL and the execution plan.
+I check a few things. Do filtering and projection happen in SQL? Does the query load navigation properties it doesn't need? Is pagination applied before ToListAsync? Do indexes support the filters and ordering? For important queries, I also look at the generated SQL and the execution plan.
 
 **Cross-question:** What is the common mistake?
 

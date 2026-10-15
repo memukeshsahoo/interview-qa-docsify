@@ -18,4 +18,4 @@
 
 ## Q3. Why avoid multiple enumeration?
 
-**Answer:** If the source is expensive, every enumeration can repeat the work. With EF Core, that can mean multiple database queries. I materialize once when I actually need to reuse the results.
+**Answer:** If the source is expensive, every enumeration can repeat the work. With EF Core, that can mean multiple database queries. So I materialize once, meaning I load it into a list, when I actually need to reuse the results.

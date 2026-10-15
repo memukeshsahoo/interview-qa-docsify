@@ -8,7 +8,7 @@ Each answer has a spoken explanation, a small code sample, and a real product st
 
 **Answer:**
 
-Strings cannot change. Each `+` makes a new string. In a loop that is many allocations. Use `StringBuilder`, or `$"..."` if there are only a few parts.
+Strings in C# cannot change. So each `+` creates a brand new string, and in a loop that means a lot of allocations. I use `StringBuilder` instead, or `$"..."` if there are only a few parts.
 
 **Example:**
 
@@ -21,13 +21,13 @@ return sb.ToString();
 
 **Real-world example:**
 
-Exporting 10,000 incident comments into one text file with `s += comment` made the export API time out. `StringBuilder` finished in milliseconds.
+We exported 10,000 incident comments into one text file using `s += comment`, and the export API timed out. With `StringBuilder` it finished in milliseconds.
 
 **Cross-question:** Two fields in a log?
 
 **Cross-answer:**
 
-`$"{id}:{status}"` is fine. The loop is the problem.
+`$"{id}:{status}"` is fine there. The loop is the real problem.
 
 ---
 
@@ -35,7 +35,7 @@ Exporting 10,000 incident comments into one text file with `s += comment` made t
 
 **Answer:**
 
-`async void` cannot be awaited. Errors do not land on the caller. Use `async Task` except for UI event handlers.
+An `async void` method cannot be awaited, so its errors never reach the caller. I use `async Task` everywhere except UI event handlers.
 
 **Example:**
 
@@ -48,13 +48,13 @@ public async Task SaveAsync(CancellationToken ct)
 
 **Real-world example:**
 
-A “close incident” API swallowed failures because a helper was `async void`. The UI showed success. The row stayed open. Changing to `async Task` made the 500 visible.
+A “close incident” API swallowed failures because one helper was `async void`. The UI showed success, but the row stayed open. Once we changed it to `async Task`, the 500 showed up properly.
 
 **Cross-question:** Event handler in WinForms?
 
 **Cross-answer:**
 
-That is the one place `async void` is accepted. Still wrap in try/catch.
+That is the one place where `async void` is accepted. I still wrap it in a try/catch.
 
 ---
 
@@ -62,7 +62,7 @@ That is the one place `async void` is accepted. Still wrap in try/catch.
 
 **Answer:**
 
-You blocked a thread-pool thread waiting on async work (sync-over-async). Under load, threads run out. Use `await` all the way.
+That line blocks a thread-pool thread while it waits on async work. This is called sync-over-async. Under load you run out of threads. The fix is to use `await` all the way up.
 
 **Example:**
 
@@ -76,13 +76,13 @@ var items = await _repo.GetOpenAsync(ct);
 
 **Real-world example:**
 
-Dashboard KPI used `.Result` “because the old method was sync”. At 9am stand-up the site hung. Replacing with `await` and `async` controller actions fixed the stall.
+A dashboard KPI used `.Result` “because the old method was sync”. At the 9am stand-up, the site hung. Switching to `await` and `async` controller actions fixed the stall.
 
 **Cross-question:** ASP.NET Core deadlock?
 
 **Cross-answer:**
 
-Less classic deadlock than old ASP.NET, but thread-pool starvation is real.
+You get the classic deadlock less often than in old ASP.NET, but thread-pool starvation is still very real.
 
 ---
 
@@ -90,7 +90,7 @@ Less classic deadlock than old ASP.NET, but thread-pool starvation is real.
 
 **Answer:**
 
-`lock` is not async-safe. Use `SemaphoreSlim.WaitAsync()`.
+`lock` does not work with async code. I use `SemaphoreSlim.WaitAsync()` instead.
 
 **Example:**
 
@@ -113,13 +113,13 @@ public async Task RefreshTokenAsync()
 
 **Real-world example:**
 
-Two API calls 401 at once and both tried to refresh the token. A `lock` around `await` was invalid. `SemaphoreSlim` made one refresh, the second waiter reused the new token.
+Two API calls got a 401 at the same time, and both tried to refresh the token. Putting a `lock` around the `await` was not allowed. With `SemaphoreSlim`, only one refresh ran, and the second caller reused the new token.
 
 **Cross-question:** Lock on `this`?
 
 **Cross-answer:**
 
-Never. Someone else can lock your object. Private `object` or `SemaphoreSlim`.
+Never. Someone else can lock on your object too. Use a private `object` or a `SemaphoreSlim`.
 
 ---
 
@@ -127,7 +127,7 @@ Never. Someone else can lock your object. Private `object` or `SemaphoreSlim`.
 
 **Answer:**
 
-`IsVip` is your C# method. EF cannot turn it into SQL.
+`IsVip` is your own C# method. EF cannot turn it into SQL.
 
 **Example:**
 
@@ -142,13 +142,13 @@ var vips = rows.Where(IsVip).ToList();
 
 **Real-world example:**
 
-“VIP customers” used a method that checked three flags in C#. EF threw translation failed. We mapped a computed `IsVip` column / simple `Where` on those flags.
+Our “VIP customers” query used a method that checked three flags in C#. EF threw a “translation failed” error. We fixed it with a computed `IsVip` column / a simple `Where` on those flags.
 
 **Cross-question:** `ToList` then `Where` always?
 
 **Cross-answer:**
 
-Only after the SQL already reduced rows. Do not load the whole table.
+Only after SQL has already cut down the rows. Don’t load the whole table.
 
 ---
 
@@ -156,7 +156,7 @@ Only after the SQL already reduced rows. Do not load the whole table.
 
 **Answer:**
 
-`count++` is not atomic. Use `Interlocked.Increment` or a `lock`.
+`count++` is not atomic — it is a read, an add, and a write, and two threads can mix those up. I use `Interlocked.Increment` or a `lock`.
 
 **Example:**
 
@@ -166,13 +166,13 @@ Interlocked.Increment(ref _openCount);
 
 **Real-world example:**
 
-An in-memory “open sockets” counter on a SignalR host was short under load. `Interlocked` matched the real connection count.
+An in-memory “open sockets” counter on a SignalR host came out too low under load. After switching to `Interlocked`, it matched the real connection count.
 
 **Cross-question:** For a dictionary of tenants?
 
 **Cross-answer:**
 
-`ConcurrentDictionary`, or one lock. Do not increment a normal `Dictionary` from many threads.
+Use `ConcurrentDictionary`, or one lock. Don’t update a normal `Dictionary` from many threads.
 
 ---
 
@@ -180,7 +180,7 @@ An in-memory “open sockets” counter on a SignalR host was short under load. 
 
 **Answer:**
 
-Hash is from fields you used in `GetHashCode`. Mutating after insert breaks lookup. Use immutable keys or an id.
+The hash comes from the fields you used in `GetHashCode`. If you change those after inserting, the set looks in the wrong place. I use immutable keys or an id.
 
 **Example:**
 
@@ -193,13 +193,13 @@ set.Add(new UserId(id));
 
 **Real-world example:**
 
-A cache of “already notified users” keyed by a mutable `User` object. After a profile update, “already notified” missed them and they got duplicate SMS. Key by `UserId`.
+We had a cache of “already notified users” keyed by a mutable `User` object. After a profile update, the lookup missed them, and they got duplicate SMS. Keying by `UserId` fixed it.
 
 **Cross-question:** Records as keys?
 
 **Cross-answer:**
 
-Fine if you do not mutate the properties that make equality.
+Fine, as long as you don’t change the properties that make up equality.
 
 ---
 
@@ -207,7 +207,7 @@ Fine if you do not mutate the properties that make equality.
 
 **Answer:**
 
-Too many sockets in TIME_WAIT. Use `IHttpClientFactory`, one typed client, not `new` per call.
+You end up with too many sockets stuck in TIME_WAIT. I use `IHttpClientFactory` with one typed client, not a `new` client per call.
 
 **Example:**
 
@@ -222,15 +222,15 @@ public class WeatherClient(HttpClient http)
 
 **Real-world example:**
 
-A job called a SMS API 50,000 times with `new HttpClient()`. Outbound HTTP died until recycle. Factory fixed it.
+A job called an SMS API 50,000 times with `new HttpClient()`. Outbound HTTP stopped working until the app was recycled. Moving to the factory fixed it.
 
-In NriCare, `MailHelper` still does `new HttpClient()` per ZeptoMail send. Same smell. I would inject `IHttpClientFactory`.
+In NriCare, `MailHelper` still does `new HttpClient()` for every ZeptoMail send. Same smell. I would inject `IHttpClientFactory` there.
 
 **Cross-question:** Static singleton HttpClient?
 
 **Cross-answer:**
 
-Better than per-call `new`, but DNS can go stale. Factory is the default in ASP.NET Core.
+It is better than `new` per call, but DNS changes can go stale. In ASP.NET Core the factory is the default choice.
 
 ---
 
@@ -238,7 +238,7 @@ Better than per-call `new`, but DNS can go stale. Factory is the default in ASP.
 
 **Answer:**
 
-Do not swallow. Log with context (incident id, not the token). Fail the API with a 500/409. Let the user retry.
+Don’t swallow the error. Log it with context (the incident id, not the token). Fail the API with a 500 or 409, and let the user retry.
 
 **Example:**
 
@@ -256,13 +256,13 @@ catch (DbUpdateException ex)
 
 **Real-world example:**
 
-Close-ticket swallowed unique-constraint errors. UI said closed. DB still open. Removing the empty catch and returning 409 fixed support tickets.
+Our close-ticket code swallowed unique-constraint errors. The UI said “closed”, but the DB row was still open. Removing the empty catch and returning a 409 stopped those support tickets.
 
 **Cross-question:** Catch and return null?
 
 **Cross-answer:**
 
-Same smell. Prefer a result type or an exception the API maps to ProblemDetails.
+Same smell. I prefer a result type, or an exception that the API maps to ProblemDetails.
 
 ---
 
@@ -270,7 +270,7 @@ Same smell. Prefer a result type or an exception the API maps to ProblemDetails.
 
 **Answer:**
 
-`0` is a valid number (priority, count). Use `int?`.
+`0` can be a real value, like a priority or a count. I use `int?` instead.
 
 **Example:**
 
@@ -280,13 +280,13 @@ public int? ParentIncidentId { get; set; }
 
 **Real-world example:**
 
-Parent ticket id `0` was sent as “no parent”. A real id never 0 until an import used 0 as a legacy key. `int?` + `null` ended the mix-up.
+We sent parent ticket id `0` to mean “no parent”. That worked because real ids were never 0 — until an import used 0 as a legacy key. Switching to `int?` with `null` ended the mix-up.
 
 **Cross-question:** `string` empty vs null?
 
 **Cross-answer:**
 
-Be consistent. User input: `IsNullOrWhiteSpace`. Database: null for unknown, empty only if empty is a real value.
+Be consistent. For user input, I check `IsNullOrWhiteSpace`. In the database, null means unknown, and I use empty only if empty is a real value.
 
 ---
 
@@ -294,7 +294,7 @@ Be consistent. User input: `IsNullOrWhiteSpace`. Database: null for unknown, emp
 
 **Answer:**
 
-The counter lives in process memory. Server A and server B each think the next number is 0001. You get duplicate `BK-2026-...-0001` or you skip numbers when one node restarts. A database sequence, or `MAX` inside a transaction, is the safe version.
+The counter lives in process memory. So server A and server B each think the next number is 0001. You get duplicate `BK-2026-...-0001` numbers, or you skip numbers when one node restarts. The safe version is a database sequence, or `MAX` inside a transaction.
 
 **Example:**
 
@@ -305,13 +305,13 @@ private static readonly ConcurrentDictionary<string, int> _dailySequenceCounter 
 
 **Real-world example:**
 
-NriCare `GenerateBookingNumber` works on one instance. Wallet `GenerateTransactionId` uses `Count() + 1` with no lock — two top-ups can get the same TXN id. I would use a unique constraint plus retry, or a sequence.
+In NriCare, `GenerateBookingNumber` works fine on one instance. The wallet’s `GenerateTransactionId` uses `Count() + 1` with no lock at all, so two top-ups can get the same TXN id. I would use a unique constraint plus a retry, or a sequence.
 
 **Cross-question:** Is `SemaphoreSlim` useless then?
 
 **Cross-answer:**
 
-It still serializes threads **on that machine**. It does not replace a database uniqueness rule.
+No. It still makes threads take turns **on that machine**. It just does not replace a uniqueness rule in the database.
 
 
 ---
@@ -319,22 +319,22 @@ It still serializes threads **on that machine**. It does not replace a database 
 ## Additional Questions
 
 ### Q12. An API is slow only in production. How do you investigate?
-**Answer:** I first check request duration, database duration, external API calls, logs and traces. Then I find the slowest step instead of guessing. If SQL is the issue, I check the generated query and execution plan.
+**Answer:** First I check request duration, database duration, external API calls, logs and traces. Then I find the slowest step instead of guessing. If SQL is the problem, I check the generated query and the execution plan.
 
 **Cross-question:** First thing you change?
 
 **Cross-answer:** Nothing blindly. I measure first.
 
 ### Q13. Two requests can update the same wallet at the same time. What do you do?
-**Answer:** I do not rely only on an in-memory lock because there may be multiple API servers. I use a database transaction with appropriate concurrency control, plus a unique/idempotency rule where needed.
+**Answer:** I don’t rely only on an in-memory lock, because there may be more than one API server. I use a database transaction with the right concurrency control, plus a unique or idempotency rule where needed.
 
 **Cross-question:** Why not just read balance, subtract, then save?
 
 **Cross-answer:** Two requests can read the same old balance and both spend it. That is a race condition.
 
 ### Q14. An external payment call times out. Should you immediately retry?
-**Answer:** Only if the operation is safe to retry. For payments I send an idempotency key or use the provider's idempotency mechanism, then verify the final status before creating another payment.
+**Answer:** Only if the operation is safe to retry. For payments, I send an idempotency key or use the provider’s own idempotency feature. Then I check the final status before creating another payment.
 
 **Cross-question:** What if the provider actually processed it but my response timed out?
 
-**Cross-answer:** A blind retry could create a duplicate. I check the payment status using the same business/reference id.
+**Cross-answer:** Then a blind retry could create a duplicate payment. So I check the payment status using the same business or reference id.

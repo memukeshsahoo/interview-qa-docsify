@@ -8,13 +8,13 @@ If these feel weak, the interview often stops here. Speak in plain words, then a
 
 **Answer:**
 
-C# is the **programming language** I write. .NET is the **platform** that provides the runtime and libraries I use for things like collections, files, networking, and web APIs. When I compile C# code, it is converted into **Intermediate Language (IL)**. When the application runs, the **Common Language Runtime (CLR)** uses the **Just-In-Time (JIT) compiler** to convert that IL into machine code that the computer can execute. So, simply: **C# is the language, and .NET is the platform that runs it and provides the libraries.**
+C# is the **programming language** I write. .NET is the **platform** under it. It gives me the runtime and the libraries I use for things like collections, files, networking, and web APIs. When I compile C# code, it turns into **Intermediate Language (IL)**. When the app runs, the **Common Language Runtime (CLR)** uses the **Just-In-Time (JIT) compiler** to turn that IL into machine code the computer can run. So, simply: **C# is the language, and .NET is the platform that runs it and provides the libraries.**
 
 **Cross-question:** .NET Framework vs .NET Core vs just “.NET”?
 
 **Cross-answer:**
 
-Old .NET Framework is Windows only. .NET Core was the cross-platform rewrite. From .NET 5 onward it is just called .NET. Today we target things like `net8.0` or `net10.0`.
+The old .NET Framework is Windows only. .NET Core was the cross-platform rewrite. From .NET 5 onward it is just called .NET. Today we target things like `net8.0` or `net10.0`.
 
 ---
 
@@ -26,7 +26,7 @@ A **value type** (`int`, `bool`, `struct`, `DateTime`) holds the data itself. Co
 
 A **reference type** (`class`, `string`, arrays) holds a pointer to the object. Copy the variable, both names point at the same object.
 
-Do not say “structs always live on the stack”. A struct field on a class lives with that object on the heap.
+I don't say “structs always live on the stack”, because that is not always true. A struct field on a class lives with that object on the heap.
 
 **Cross-question:** Is `string` a value type because it cannot change?
 
@@ -64,7 +64,7 @@ It is extra work. In a loop, prefer `List<int>` over an old `ArrayList` of ints.
 
 **Cross-answer:**
 
-Yes. Same idea with some interface calls on structs. Generics like `where T : IComparable<T>` help you skip boxing.
+Yes. The same thing happens with some interface calls on structs. Generics like `where T : IComparable<T>` help you skip boxing.
 
 ---
 
@@ -82,7 +82,7 @@ Yes. Same idea with some interface calls on structs. Generics like `where T : IC
 
 **Cross-answer:**
 
-Because your class did not overload `==`. They are two objects. Strings look equal because `string` special-cases `==`.
+Because your class did not overload `==`, so it compares references, and they are two different objects. Strings look equal because `string` special-cases `==`.
 
 ---
 
@@ -122,13 +122,13 @@ I use a class. EF likes mutable objects with an id. Records are nicer for reques
 
 **Answer:**
 
-A constructor runs when you `new` an object. It sets it up. Child classes do **not** inherit constructors. If the parent has no empty constructor, the child must call `: base(...)`.
+A constructor runs when you `new` an object. Its job is to set the object up. Child classes do **not** inherit constructors. If the parent has no empty constructor, the child must call `: base(...)`.
 
 **Cross-question:** Static constructor?
 
 **Cross-answer:**
 
-It runs once for the type, before first use. No parameters. No `public`. Used to set static data.
+It runs once for the type, before first use. It takes no parameters and has no `public`. I use it to set static data.
 
 ---
 
@@ -136,15 +136,15 @@ It runs once for the type, before first use. No parameters. No `public`. Used to
 
 **Answer:**
 
-`const` is baked in at compile time. It is always static. Only simple values like numbers and strings.
+`const` is baked in at compile time. It is always static, and it only works with simple values like numbers and strings.
 
-`readonly` can be set in the constructor. It can be runtime.
+`readonly` can be set in the constructor, so its value can come from runtime.
 
 **Cross-question:** If I change a `const` in one DLL, does the other DLL need a rebuild?
 
 **Cross-answer:**
 
-Usually yes. The value was copied into the caller. `static readonly` is looked up at runtime, so the other DLL can see the new value after you replace the first DLL.
+Usually yes. The value was copied into the caller when it was compiled. `static readonly` is looked up at runtime, so the other DLL can see the new value after you replace the first DLL.
 
 ---
 
@@ -152,13 +152,13 @@ Usually yes. The value was copied into the caller. `static readonly` is looked u
 
 **Answer:**
 
-An array has a fixed size. `List<T>` can grow. `IEnumerable<T>` is “I can foreach this”. It might not have run yet (LINQ). Do not loop it twice if it hits the database.
+An array has a fixed size. `List<T>` can grow. `IEnumerable<T>` just means “I can foreach this”. With LINQ, it might not have run yet. If it hits the database, I don't loop it twice.
 
 **Cross-question:** Why return `IReadOnlyList<T>`?
 
 **Cross-answer:**
 
-So the caller cannot `Add` or `Clear` my inner list. Smaller promise.
+So the caller cannot `Add` or `Clear` my inner list. It is a smaller promise.
 
 ---
 
@@ -166,13 +166,13 @@ So the caller cannot `Add` or `Clear` my inner list. Smaller promise.
 
 **Answer:**
 
-Strings never change. `s = s + x` in a loop makes many extra strings. `StringBuilder` edits a buffer.
+Strings never change, so `s = s + x` in a loop makes many extra strings. `StringBuilder` edits a buffer instead.
 
 **Cross-question:** Always use `StringBuilder`?
 
 **Cross-answer:**
 
-No. A few pieces with `$"{a}-{b}"` is fine and easier to read. Use `StringBuilder` in loops.
+No. For a few pieces, `$"{a}-{b}"` is fine and easier to read. I use `StringBuilder` in loops.
 
 ---
 
@@ -194,7 +194,7 @@ Classes can be null. `int` cannot. `int?` is a wrapper: either a number or “no
 
 **Answer:**
 
-`if` is for conditions. `switch` is nice for a list of cases. A switch **expression** returns a value in one go.
+I use `if` for conditions. `switch` is nice when I have a list of cases. A switch **expression** returns a value in one go.
 
 **Cross-question:** Give a simple pattern match.
 
@@ -208,7 +208,7 @@ Classes can be null. `int` cannot. `int?` is a wrapper: either a number or “no
 
 **Answer:**
 
-`try` is the risky code. `catch` handles a **specific** error if you can. `finally` always runs, for cleanup. Do not swallow errors. Do not use exceptions as normal flow.
+`try` holds the risky code. `catch` handles a **specific** error if you can. `finally` always runs, so it is for cleanup. I don't swallow errors, and I don't use exceptions as normal flow.
 
 **Cross-question:** `throw ex;` vs `throw;`?
 
@@ -228,7 +228,7 @@ Namespaces group types so names do not clash. `using System.Linq;` brings names 
 
 **Cross-answer:**
 
-`namespace MyApp.Services;` at the top. Same meaning, less nesting. C# 10+.
+You write `namespace MyApp.Services;` at the top. Same meaning, less nesting. It needs C# 10+.
 
 ---
 
@@ -246,7 +246,7 @@ They pass a variable by reference.
 
 **Cross-answer:**
 
-`TryParse` style `out` is fine. For two results I prefer a small type or `(bool ok, User user)`. Many `out` parameters are hard to read.
+`TryParse`-style `out` is fine. For two results I prefer a small type or `(bool ok, User user)`. Many `out` parameters are hard to read.
 
 ---
 
@@ -256,9 +256,9 @@ They pass a variable by reference.
 
 **Overload:** same name, different parameters.
 
-**Override:** child replaces a `virtual` method. Calls use the real type.
+**Override:** a child replaces a `virtual` method. Calls use the real type of the object.
 
-**`new`:** hides the parent method. Easy to get wrong. I avoid it.
+**`new`:** hides the parent method. It is easy to get wrong, so I avoid it.
 
 **Cross-question:** Variable type is `Base`, object is `Derived`. Which method runs?
 
@@ -272,7 +272,7 @@ They pass a variable by reference.
 
 **Answer:**
 
-It belongs to the type, not one object. No `this`. A static class cannot be created with `new`.
+It belongs to the type, not to one object, so there is no `this`. A static class cannot be created with `new`.
 
 **Cross-question:** Why are static classes hard to test?
 
@@ -292,7 +292,7 @@ A property looks like a field (`user.Name`) but it is get/set methods. I can add
 
 **Cross-answer:**
 
-Start with auto properties. Add a backing field when I need extra logic.
+I start with auto properties. I add a backing field when I need extra logic.
 
 ---
 
@@ -300,13 +300,13 @@ Start with auto properties. Add a backing field when I need extra logic.
 
 **Answer:**
 
-`is null` is nice because it cannot be overloaded. `??` means “if left is null, use the right side”. `?.` stops if the left is null.
+`is null` is nice because it cannot be overloaded. `??` means “if left is null, use the right side”. `?.` stops if the left side is null.
 
 **Cross-question:** `??` vs `||`?
 
 **Cross-answer:**
 
-C# does not use `||` for defaults the way JavaScript does. Use `??` for null. For `int?`, `value ?? 0` is the usual pattern.
+C# does not use `||` for defaults the way JavaScript does. I use `??` for null. For `int?`, `value ?? 0` is the usual pattern.
 
 ---
 
@@ -314,13 +314,13 @@ C# does not use `||` for defaults the way JavaScript does. Use `??` for null. Fo
 
 **Answer:**
 
-A named set of numbers: `Open`, `Closed`. Easier to read than magic ints. I still store them carefully in the database and do not assume the number will never change.
+It is a named set of numbers, like `Open` and `Closed`. It is easier to read than magic ints. I still store them carefully in the database and do not assume the number will never change.
 
 **Cross-question:** Enum vs a lookup table?
 
 **Cross-answer:**
 
-Enum: closed list that rarely changes, used in code. Table: business can add values without a new build. Status values that product changes often belong in data.
+An enum is for a closed list that rarely changes and is used in code. A table lets the business add values without a new build. Status values that product changes often belong in data.
 
 ---
 
@@ -348,7 +348,7 @@ Empty means `""`. White space means `"   "` too. For user input I usually use `I
 
 **Cross-answer:**
 
-No. That is a real string of characters. Only trim and extra checks would catch junk like that.
+No. That is a real string of characters. Only trimming and extra checks would catch junk like that.
 
 ---
 
@@ -356,7 +356,7 @@ No. That is a real string of characters. Only trim and extra checks would catch 
 
 **Answer:**
 
-It is a contract: “you must have these methods”. A class can implement many interfaces. I program against `IEmailSender`, not `SmtpEmailSender`, so tests can pass a fake.
+It is a contract that says “you must have these methods”. A class can implement many interfaces. I program against `IEmailSender`, not `SmtpEmailSender`, so tests can pass a fake.
 
 **Cross-question:** Can an interface have code?
 
@@ -370,13 +370,13 @@ Yes, default interface methods exist. I keep them thin. Shared heavy code still 
 
 **Answer:**
 
-`DateTime` is a date and time, but timezone is easy to mess up. `DateTimeOffset` includes the offset from UTC. `DateOnly` is just a date, like a birthday.
+`DateTime` is a date and time, but the timezone is easy to mess up. `DateTimeOffset` includes the offset from UTC. `DateOnly` is just a date, like a birthday.
 
 **Cross-question:** What do you store in the database for “when was this created”?
 
 **Cross-answer:**
 
-UTC. I convert for the screen. Mixing local times from servers in two countries is a classic bug.
+UTC. I convert it to local time for the screen. Mixing local times from servers in two countries is a classic bug.
 
 
 ---

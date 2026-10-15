@@ -1,6 +1,6 @@
 # .NET — Situational questions
 
-API, EF, auth, tenants. Speak the answer, then point at the example.
+API, EF, auth, tenants. Say the answer first, then point to the example.
 
 ---
 
@@ -8,7 +8,7 @@ API, EF, auth, tenants. Speak the answer, then point at the example.
 
 **Answer:**
 
-N+1. You loaded parents, then for each parent loaded children in a loop. Fix with a projection (`Select` to DTO) or `Include` / split query.
+That is the N+1 problem. The code loaded the parents, then loaded the children for each parent in a loop. So one list turns into one query plus one more per row. I fix it with a projection (`Select` into a DTO) or with `Include` / a split query.
 
 **Example:**
 
@@ -26,13 +26,13 @@ var dto = await db.Incidents
 
 **Real-world example:**
 
-Incident list showed comment counts. The code did `foreach` + `incident.Comments.Count`. 200 incidents = 201 SQL calls. One `Select` with `Count()` became one SQL.
+Our incident list showed comment counts. The code did a `foreach` and read `incident.Comments.Count` for each one. 200 incidents meant 201 SQL calls. We changed it to one `Select` with `Count()`, and it became a single SQL query.
 
 **Cross-question:** `Include(i => i.Comments)` then `Count` in memory?
 
 **Cross-answer:**
 
-Pulls all comment rows. Heavier than `Count()` in the projection.
+That pulls every comment row into memory just to count them. It is much heavier than doing `Count()` inside the projection.
 
 ---
 
@@ -40,7 +40,7 @@ Pulls all comment rows. Heavier than `Count()` in the projection.
 
 **Answer:**
 
-IDOR. You loaded by id only. Possession of the id is not permission. After load, check tenant (and role). Return 404 or 403.
+That is IDOR (insecure direct object reference). We loaded the record by id only. But having the id does not mean you are allowed to see it. After loading, I check the tenant (and the role), and return 404 or 403 if it does not match.
 
 **Example:**
 
@@ -53,17 +53,17 @@ if (incident.TenantKey != _user.TenantKey)
     return NotFound(); // do not admit it exists
 ```
 
-If the database **is** the tenant, still do not query another tenant’s connection.
+If each tenant has its own database, the same rule applies: never query another tenant’s connection.
 
 **Real-world example:**
 
-Support guessed sequential ids and saw another hospital’s incidents. Fix: tenant connection from the login claim, never from the body, plus tests “user A cannot read B”.
+A support user guessed sequential ids and saw another hospital’s incidents. The fix was to pick the tenant connection from the login claim, never from the request body. We also added tests like “user A cannot read B”.
 
 **Cross-question:** Hide with Angular `*ngIf`?
 
 **Cross-answer:**
 
-No. Postman still works. API must check.
+No. Someone can still call the API from Postman. The API itself must do the check.
 
 ---
 
@@ -71,7 +71,7 @@ No. Postman still works. API must check.
 
 **Answer:**
 
-Captive dependency. Scoped `DbContext` became a singleton. It is not thread-safe and it tracks stale entities. Inject `IServiceScopeFactory` and create a scope per operation.
+That is a captive dependency. A scoped `DbContext` got stuck inside a singleton, so it lives forever. `DbContext` is not thread-safe, and it keeps tracking old, stale entities. The fix is to inject `IServiceScopeFactory` and create a new scope for each operation.
 
 **Example:**
 
@@ -89,13 +89,13 @@ public class NightlyJob(IServiceScopeFactory scopes)
 
 **Real-world example:**
 
-Hangfire “send reminder” job injected `AppDbContext` into a singleton processor. Random “already tracked” errors. Creating a scope per job fixed it.
+We had a Hangfire “send reminder” job that injected `AppDbContext` into a singleton processor. We kept getting random “already tracked” errors. Creating a scope per job fixed it.
 
 **Cross-question:** Transient DbContext?
 
 **Cross-answer:**
 
-Worse — two resolves in one request are two contexts. Keep **scoped** for HTTP, new scope for jobs.
+That is worse. If you resolve it twice in one request, you get two different contexts. I keep it **scoped** for HTTP requests and create a new scope for background jobs.
 
 ---
 
@@ -103,7 +103,7 @@ Worse — two resolves in one request are two contexts. Keep **scoped** for HTTP
 
 **Answer:**
 
-Cache key missed tenant id. Always include tenant (and user if the data is personal).
+The cache key did not include the tenant id, so all tenants shared one entry. I always put the tenant in the key, and the user too if the data is personal.
 
 **Example:**
 
@@ -118,13 +118,13 @@ if (!_cache.TryGetValue(key, out Counts? counts))
 
 **Real-world example:**
 
-Dashboard KPIs looked “shared” after Redis was added. Key was `"kpi-open"`. Adding tenant slug to the key isolated the numbers.
+After we added Redis, dashboard KPIs looked “shared” between customers. The key was just `"kpi-open"`. Adding the tenant slug to the key kept each tenant’s numbers separate.
 
 **Cross-question:** Memory cache on two servers?
 
 **Cross-answer:**
 
-Each server has its own memory. Use Redis if users bounce between nodes, still key by tenant.
+Each server has its own memory. If users bounce between nodes, I use Redis. And I still key it by tenant.
 
 ---
 
@@ -132,7 +132,7 @@ Each server has its own memory. Use Redis if users bounce between nodes, still k
 
 **Answer:**
 
-The client can send any user id. Take the id from **claims** after the token is validated.
+The client can send any user id it wants. I take the user id from the **claims** after the token is validated, not from the body.
 
 **Example:**
 
@@ -143,13 +143,13 @@ dto.OwnerId = userId; // ignore body owner id for “me” actions
 
 **Real-world example:**
 
-“Update my profile” accepted `userId` in the body. A user changed someone else’s email. We ignored the body id and used the token `sub`.
+Our “Update my profile” endpoint accepted `userId` in the body. A user changed someone else’s email with it. We stopped reading the body id and used the token’s `sub` claim instead.
 
 **Cross-question:** Admin updating another user?
 
 **Cross-answer:**
 
-Then the target id is in the route, and you check **Admin** plus tenant, not “any id in JSON”.
+Then the target id comes from the route. I check that the caller is an **Admin** and in the same tenant. I don’t just accept any id from the JSON.
 
 ---
 
@@ -157,7 +157,7 @@ Then the target id is in the route, and you check **Admin** plus tenant, not “
 
 **Answer:**
 
-One transaction: incident row + outbox row. A worker publishes later. Do not call the bus then save, or save then bus with no outbox.
+I save the incident row and the outbox row in one transaction. A background worker publishes the message later. I don’t call the message bus and then save, and I don’t save and then call the bus without an outbox.
 
 **Example:**
 
@@ -171,13 +171,13 @@ await tx.CommitAsync(ct);
 
 **Real-world example:**
 
-Email “ticket created” sometimes never arrived because Hangfire enqueue ran after save and the process died. Outbox + worker made email eventually consistent.
+The “ticket created” email sometimes never arrived. The Hangfire enqueue ran after the save, and sometimes the process died in between. With an outbox and a worker, the email became eventually consistent: it may be a bit late, but it always goes out.
 
 **Cross-question:** Two databases?
 
 **Cross-answer:**
 
-You cannot share one EF transaction easily. Outbox in the **same** DB as the business row.
+You can’t easily share one EF transaction across two databases. So the outbox table must live in the **same** database as the business row.
 
 ---
 
@@ -185,11 +185,11 @@ You cannot share one EF transaction easily. Outbox in the **same** DB as the bus
 
 **Answer:**
 
-1. Is it the server or the browser? Network TTFB.
-2. How many SQL statements? Duration?
-3. Too many columns? `Select` DTO.
-4. Missing index (tell a human DBA; do not invent raw SQL in app code if the team forbids it).
-5. N+1, then payload size, then JSON.
+1. First, is it the server or the browser? I check TTFB (time to first byte) in the Network tab.
+2. How many SQL statements run, and how long do they take?
+3. Are we pulling too many columns? If so, `Select` into a DTO.
+4. Is an index missing? I tell a human DBA; I don’t invent raw SQL in app code if the team doesn’t allow it.
+5. Then N+1, then payload size, then JSON serialization.
 
 **Example:**
 
@@ -201,13 +201,13 @@ var sql = query.ToQueryString();
 
 **Real-world example:**
 
-Incident list TTFB was 8s. SQL was 40ms. The payload included every comment body. Projection without comments made TTFB 80ms. The bug was over-select, not the database server.
+Our incident list had a TTFB of 8s, but the SQL took only 40ms. The payload included every comment body. A projection without comments brought TTFB down to 80ms. The problem was selecting too much data, not the database server.
 
 **Cross-question:** Add Redis first?
 
 **Cross-answer:**
 
-Not before you know the query is honest and keyed by tenant.
+No. Not until I know the query itself is sensible and the data is keyed by tenant.
 
 ---
 
@@ -215,7 +215,7 @@ Not before you know the query is honest and keyed by tenant.
 
 **Answer:**
 
-Do not trust the file name or content-type header. Check size, extension allow-list, and sniff the real type if you can. Store a generated name outside the web root. Serve through an authorized download action.
+I don’t trust the file name or the content-type header. I check the size, check the extension against an allow-list, and sniff the real file type if I can. I store the file under a generated name, outside the web root. Downloads go through an action that checks authorization.
 
 **Example:**
 
@@ -232,13 +232,13 @@ var name = $"{Guid.NewGuid():N}{ext}";
 
 **Real-world example:**
 
-A “PDF” upload was an exe with a double extension. We saved as a random id + allowed ext only, and never executed uploads.
+Someone uploaded a “PDF” that was really an exe with a double extension. We saved files as a random id plus an allowed extension only, and we never executed uploads.
 
 **Cross-question:** `Path.Combine(folder, file.FileName)`?
 
 **Cross-answer:**
 
-`../` can escape the folder. Never use the raw name as the path.
+A name with `../` can escape the folder. I never use the raw file name as part of the path.
 
 ---
 
@@ -246,7 +246,7 @@ A “PDF” upload was an exe with a double extension. We saved as a random id +
 
 **Answer:**
 
-Swagger is often the same origin as the API. Angular is another origin. Allow that exact origin. Do not use `AllowAnyOrigin` with cookies.
+Swagger usually runs on the same origin as the API. Angular runs on a different origin, so the browser applies CORS. I allow that exact origin. And I don’t use `AllowAnyOrigin` when cookies are involved.
 
 **Example:**
 
@@ -258,13 +258,13 @@ policy.WithOrigins("http://localhost:4200")
 
 **Real-world example:**
 
-Devs thought the API was “down”. Postman worked. Browser console said CORS. Adding `localhost:4200` (or a dev proxy) fixed it. Production used the real HTTPS origin.
+Developers thought the API was “down”. Postman worked fine, but the browser console showed a CORS error. Adding `localhost:4200` (or using a dev proxy) fixed it. In production we allowed the real HTTPS origin.
 
 **Cross-question:** Is CORS login?
 
 **Cross-answer:**
 
-No. It is a browser rule. Auth is still required.
+No. CORS is just a browser rule about which origins can call the API. You still need authentication.
 
 ---
 
@@ -272,7 +272,7 @@ No. It is a browser rule. Auth is still required.
 
 **Answer:**
 
-Concurrency token (row version). Second save gets an exception. Tell the user to reload.
+I add a concurrency token (a row version). When two people save, the second save gets a concurrency exception, and we tell that user to reload.
 
 **Example:**
 
@@ -285,13 +285,13 @@ builder.Property(x => x.RowVersion).IsRowVersion();
 
 **Real-world example:**
 
-Two agents typed a resolution. The slower save wiped the first note. RowVersion + “someone else changed this” toast saved the notes.
+Two agents were typing a resolution at the same time. The slower save wiped out the first note. With RowVersion and a “someone else changed this” toast, no notes were lost.
 
 **Cross-question:** Last write wins for a timestamp field?
 
 **Cross-answer:**
 
-OK for “last seen at”. Not for money, status, or comments.
+That’s fine for something like “last seen at”. It is not fine for money, status, or comments.
 
 ---
 
@@ -299,7 +299,7 @@ OK for “last seen at”. Not for money, status, or comments.
 
 **Answer:**
 
-Same wallet, two HTTP requests. I lock the wallet row with `FOR UPDATE` inside a transaction, compute `Balance - active holds`, then insert the hold. The second waiter sees the first hold and gets “insufficient available balance”.
+It’s the same wallet hit by two HTTP requests. Inside a transaction, I lock the wallet row with `FOR UPDATE`, work out `Balance - active holds`, and then insert the hold. The second request waits for the lock, then sees the first hold and gets “insufficient available balance”.
 
 **Example:**
 
@@ -320,13 +320,13 @@ if (wallet.Balance - activeHolds < totalAmount)
 
 **Real-world example:**
 
-NriCare booking create does this. Available is not `Wallet.Balance` alone. Holds sit in `HoldBalances` with status Active.
+NriCare’s booking create does exactly this. The available amount is not just `Wallet.Balance`. Holds sit in `HoldBalances` with status Active, and we subtract them.
 
 **Cross-question:** In-memory lock instead?
 
 **Cross-answer:**
 
-`SemaphoreSlim` only works on one server. Two API instances would both pass. Database lock is the right place.
+`SemaphoreSlim` only works within one server. With two API instances, both requests could pass. The database lock is the right place for this.
 
 ---
 
@@ -334,7 +334,7 @@ NriCare booking create does this. Available is not `Wallet.Balance` alone. Holds
 
 **Answer:**
 
-Razorpay has the money. `RazorPayPaymentLog` may still be pending. Wallet is not credited. There is no webhook to finish the job. If the user taps verify again, capture may say “already captured”, but `AddMoneyAsync` can run again and double credit. I would store Razorpay payment id uniquely and credit only once.
+Razorpay has the money, but the wallet is not credited. `RazorPayPaymentLog` may still be pending. There is no webhook to finish the job. If the user taps verify again, capture may say “already captured”, but `AddMoneyAsync` can run again and credit twice. I would store the Razorpay payment id as unique and credit only once.
 
 **Example:**
 
@@ -348,13 +348,13 @@ var log = await _context.RazorPayPaymentLogs
 
 **Real-world example:**
 
-`PaymentController` verify captures, then separately calls `AddMoneyAsync`. Those are not one transaction with Razorpay.
+In `PaymentController`, verify captures the payment and then separately calls `AddMoneyAsync`. Those two steps are not one transaction with Razorpay.
 
 **Cross-question:** Outbox?
 
 **Cross-answer:**
 
-After capture, write “credit wallet” in the same DB as the log, then a job credits. Or a Razorpay webhook that is idempotent on `pay_...`.
+After capture, I write a “credit wallet” record in the same DB as the log, and a job does the credit. Or I use a Razorpay webhook that is idempotent on the `pay_...` id, so running it twice is safe.
 
 ---
 
@@ -362,7 +362,7 @@ After capture, write “credit wallet” in the same DB as the log, then a job c
 
 **Answer:**
 
-Yes, it can. `EmailJob` always inserts a new `EmailLog` and sends. It swallows exceptions, so TickerQ may **not** retry on failure — but a duplicate enqueue will send twice. Document expiry also schedules a new daily ticker on every app start.
+Yes, it can happen. `EmailJob` always inserts a new `EmailLog` and sends. It swallows exceptions, so TickerQ may **not** retry when sending fails — but if the job gets enqueued twice, it sends twice. Also, document expiry schedules a new daily ticker every time the app starts.
 
 **Example:**
 
@@ -385,13 +385,13 @@ public async Task SendEmail(TickerFunctionContext<AddEmailLogRequestDto> treques
 
 **Real-world example:**
 
-NriCare emails go ZeptoMail through this job. I would rethrow after logging if I want retries, and skip send if a log for that receipt already succeeded.
+NriCare emails go out through ZeptoMail via this job. If I want retries, I would rethrow after logging. And I would skip the send if a log for that receipt already succeeded.
 
 **Cross-question:** Review-request job?
 
 **Cross-answer:**
 
-That one is safer. `CreateReviewRequestAsync` returns early if a request already exists. Retries are ok.
+That one is safer. `CreateReviewRequestAsync` returns early if a request already exists, so retries are fine.
 
 ---
 
@@ -399,7 +399,7 @@ That one is safer. `CreateReviewRequestAsync` returns early if a request already
 
 **Answer:**
 
-We look for ledger `IdempotencyKey == "release_{bookingId}"`. If found, we return success without paying again. The second call is a no-op **if** the first already committed.
+We look for a ledger entry with `IdempotencyKey == "release_{bookingId}"`. If we find one, we return success without paying again. So the second call does nothing — **if** the first one already committed.
 
 **Example:**
 
@@ -411,13 +411,13 @@ if (await _context.WalletTransactions.AnyAsync(x => x.IdempotencyKey == idempote
 
 **Real-world example:**
 
-Complete booking and verifier-approved both call `ReleasePayment`. The key is how we avoid paying the provider twice.
+Both “complete booking” and “verifier approved” call `ReleasePayment`. This key is how we avoid paying the provider twice.
 
 **Cross-question:** Two requests in the same millisecond?
 
 **Cross-answer:**
 
-Both can pass the `AnyAsync` check. Unique index on the key is the missing piece.
+Then both can pass the `AnyAsync` check. A unique index on the key is the missing piece.
 
 ---
 
@@ -425,7 +425,7 @@ Both can pass the `AnyAsync` check. Unique index on the key is the missing piece
 
 **Answer:**
 
-Accept runs in `QuotationRepository.ChangeStatusAsync`. Available = balance minus active holds. If `payable` is greater than available, we return 400 with available vs required. Booking stays as it was. We do not accept and hope they recharge later.
+Accept runs in `QuotationRepository.ChangeStatusAsync`. Available balance is the balance minus active holds. If `payable` is more than what’s available, we return a 400 that shows available vs required. The booking stays as it was. We don’t accept it and hope they recharge later.
 
 **Example:**
 
@@ -437,13 +437,13 @@ if (availableBalance < payable)
 
 **Real-world example:**
 
-NriCare extra quotation amount becomes another `HoldBalance` on the same booking, expiry 7 days, key `quotation_hold_{quotationId}_{nrUserId}`.
+In NriCare, the extra quotation amount becomes another `HoldBalance` on the same booking. It expires in 7 days and uses the key `quotation_hold_{quotationId}_{nrUserId}`.
 
 **Cross-question:** Transaction around accept?
 
 **Cross-answer:**
 
-Not today. I would wrap hold + quotation status + booking Active in one `BeginTransactionAsync`.
+Not today. I would wrap the hold, the quotation status, and setting the booking to Active in one `BeginTransactionAsync`.
 
 ---
 
@@ -451,7 +451,7 @@ Not today. I would wrap hold + quotation status + booking Active in one `BeginTr
 
 **Answer:**
 
-No. Money and booking status are the source of truth. Push is extra. In booking/wallet code we `try/catch` around `INotificationService` and log. The HTTP call still succeeds. The user can see the in-app `Notification` row if that save worked.
+No. Money and booking status are the source of truth. The push notification is extra. In the booking and wallet code we wrap `INotificationService` calls in `try/catch` and log the error. The HTTP call still succeeds. The user can still see the in-app `Notification` row if that save worked.
 
 **Example:**
 
@@ -464,13 +464,13 @@ catch (Exception ex) {
 
 **Real-world example:**
 
-`WalletRepository.AddMoneyAsync` already does this. Booking notification job also isolates DB insert vs FCM in two try blocks.
+`WalletRepository.AddMoneyAsync` already does this. The booking notification job also keeps the DB insert and the FCM call in two separate try blocks.
 
 **Cross-question:** Hide the failure forever?
 
 **Cross-answer:**
 
-Log it. A later retry on FCM is nice. Do not roll back a completed booking because Firebase blinked.
+No, I log it. Retrying FCM later would be nice. But I won’t roll back a completed booking just because Firebase had a hiccup.
 
 ---
 
@@ -478,7 +478,7 @@ Log it. A later retry on FCM is nice. Do not roll back a completed booking becau
 
 **Answer:**
 
-Network TTFB first. Then SQL. That endpoint counts incoming, outgoing, sums, hold total, then paginates — several round trips. I would look at indexes on `FromWalletId` / `ToWalletId` / `CreatedDate`, and whether we need all those totals on every page request.
+I check network TTFB first, then the SQL. That endpoint counts incoming and outgoing transactions, sums them, gets the hold total, and then paginates — that’s several round trips. I would look at the indexes on `FromWalletId` / `ToWalletId` / `CreatedDate`, and ask whether we really need all those totals on every page request.
 
 **Example:**
 
@@ -490,13 +490,13 @@ var outgoing = await baseQuery.Where(...Debit...).CountAsync();
 
 **Real-world example:**
 
-`GetWalletTransactionAsync` does this. Fine for a small ledger. Under load I would one grouped query or cache the totals for a few seconds per user.
+`GetWalletTransactionAsync` works this way. It’s fine for a small ledger. Under load, I would use one grouped query, or cache the totals for a few seconds per user.
 
 **Cross-question:** `Include` the wallets?
 
 **Cross-answer:**
 
-No. Project names in `Select`. `Include` pulls full graphs.
+No. I project just the names in the `Select`. `Include` pulls in full object graphs.
 
 ---
 
@@ -504,7 +504,7 @@ No. Project names in `Select`. `Include` pulls full graphs.
 
 **Answer:**
 
-The association must be approved. Amount > 0. SuperAdmin wallet must cover it. We debit SA, credit MA, write a Transfer ledger, PDF receipt, email. Two concurrent recharges should not both pass on the same last rupee — today there is no `FOR UPDATE` on that path, so I would add the same atomic debit as subscriptions.
+The association must be approved, the amount must be greater than 0, and the SuperAdmin wallet must have enough to cover it. Then we debit SuperAdmin, credit the Main Association, write a Transfer ledger entry, create a PDF receipt, and send an email. Two recharges running at the same time must not both pass on the same last rupee. Today there is no `FOR UPDATE` on that path, so I would add the same atomic debit we use for subscriptions.
 
 **Example:**
 
@@ -517,13 +517,13 @@ if (rows == 0) return BadRequest("Insufficient Super Admin balance");
 
 **Real-world example:**
 
-`MainAssociationRepository.RechargeWalletAsync` is the admin recharge, not Razorpay. Modes like Bank Transfer / UPI are stored on the ledger.
+`MainAssociationRepository.RechargeWalletAsync` is the admin recharge, not Razorpay. Payment modes like Bank Transfer / UPI are stored on the ledger.
 
 **Cross-question:** Unique transaction reference?
 
 **Cross-answer:**
 
-The field exists. A unique index would stop duplicate bank refs. I would add it.
+The field already exists. A unique index on it would stop duplicate bank references. I would add one.
 
 ---
 
@@ -531,7 +531,7 @@ The field exists. A unique index would stop duplicate bank refs. I would add it.
 
 **Answer:**
 
-The message is already in `ChatMessages`. SignalR already pushed to groups on that node. FCM is fire-and-forget `Task.Run` with a new scope. Offline users might miss the push, but they still load history from REST. I would not put FCM in the same transaction as the message.
+No. The message is already saved in `ChatMessages`, and SignalR has already pushed it to the groups on that node. FCM runs fire-and-forget in a `Task.Run` with a new scope. Offline users might miss the push, but they still load the history through REST. I would not put FCM in the same transaction as the message.
 
 **Example:**
 
@@ -547,13 +547,13 @@ _ = Task.Run(async () => {
 
 **Real-world example:**
 
-NriCare `ChatHub.SendMessage` does exactly this. Online check uses in-memory connections, so a second server may still send FCM, which is ok.
+NriCare’s `ChatHub.SendMessage` does exactly this. The online check uses in-memory connections, so a second server may still send FCM. That’s ok.
 
 **Cross-question:** `Clients.All` for the message?
 
 **Cross-answer:**
 
-No. We send to participant user groups. `Clients.All` is only used for online/offline presence, which I would also scope down.
+No. We send to the participants’ user groups. `Clients.All` is only used for online/offline presence, and I would narrow that down too.
 
 ---
 
@@ -561,7 +561,7 @@ No. We send to participant user groups. `Clients.All` is only used for online/of
 
 **Answer:**
 
-Upload, get, and delete files without a token. Anyone who can hit the API can put objects in Spaces or delete by id. I would put `[Authorize]` back, check the user owns the file, and keep anonymous only for a true public asset if we ever need one.
+It means anyone can upload, get, and delete files without a token. Anyone who can reach the API can put objects in Spaces or delete them by id. I would put `[Authorize]` back, check that the user owns the file, and allow anonymous access only for a truly public asset if we ever need one.
 
 **Example:**
 
@@ -576,22 +576,22 @@ public class FileController : BaseCommonController
 
 **Real-world example:**
 
-This is the current NriCare common file API. I would treat it as a security fix, not a feature.
+This is how the NriCare common file API is today. I would treat it as a security fix, not a feature.
 
 **Cross-question:** Presigned download instead of public get?
 
 **Cross-answer:**
 
-Yes for private docs. Helper already builds presigned URLs (~50 minutes). The delete still must be authenticated.
+Yes, for private documents. There’s already a helper that builds presigned URLs (valid ~50 minutes). But delete still must require authentication.
 
 
 ---
 ## Additional Questions
 ### Q16. A production endpoint takes 5 seconds. What do you check?
-**Answer:** I split the time into database, external APIs, application code and serialization. Logs/traces tell me where the time is going; then I optimize the actual bottleneck.
+**Answer:** I split the time into four parts: database, external APIs, application code, and serialization. Logs and traces show me where the time goes. Then I fix the real bottleneck.
 
 ### Q17. A user can access another user's record by changing the id in the URL. What do you do?
-**Answer:** I add server-side resource authorization. The query itself should be scoped to the current user/tenant where possible, not fetch the row first and trust the client.
+**Answer:** I add authorization on the server for that resource. Where possible, the query itself should be scoped to the current user/tenant. I don’t fetch the row first and trust the client.
 
 ### Q18. An API gets many duplicate requests. How do you protect it?
-**Answer:** For expensive or sensitive operations I use idempotency keys, validation, rate limiting where appropriate, and database uniqueness constraints. Client-side button disabling alone is not enough.
+**Answer:** For expensive or sensitive operations, I use idempotency keys, validation, rate limiting where it makes sense, and unique constraints in the database. Just disabling the button on the client is not enough.

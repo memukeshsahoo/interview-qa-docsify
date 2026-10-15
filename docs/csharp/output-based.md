@@ -56,7 +56,7 @@ False
 True
 ```
 
-`==` on `object` is reference. Two boxes = two heap objects. `Equals` is overridden on `int` via virtual call and compares value.
+`==` on `object` compares references. Two boxes means two heap objects. `Equals` is overridden on `int` and called virtually, so it compares the value.
 
 **Real-world example:** `ArrayList` of ints — `==` on boxed values fails in tests. `List<int>` does not box.
 
@@ -86,7 +86,7 @@ Console.WriteLine(a);
 2
 ```
 
-**Real-world example:** A helper `Normalize(page)` that does `page = page < 1 ? 1 : page` without `ref` does not change the caller’s page. Return a new value instead of `ref` in APIs.
+**Real-world example:** A helper `Normalize(page)` that does `page = page < 1 ? 1 : page` without `ref` does not change the caller’s page. In APIs, I return a new value instead of using `ref`.
 
 **Cross-question:** `in` parameter?
 
@@ -112,9 +112,9 @@ Console.WriteLine(n);
 6
 ```
 
-The query does not run until `ToList`. Two enumerations = two runs. `Range(1,3)` has 3 items, twice = 6.
+The query does not run until `ToList`. Two enumerations means two runs. `Range(1,3)` has 3 items, and running it twice gives 6.
 
-**Real-world example:** `IQueryable` enumerated twice = two SQL calls. I materialize once (`ToList`) if I need two loops.
+**Real-world example:** Enumerating an `IQueryable` twice means two SQL calls. I materialize once (`ToList`) if I need two loops.
 
 **Cross-question:** `Count()` then `ToList()` on EF?
 
@@ -138,13 +138,13 @@ Console.WriteLine(Get().Result);
 5
 ```
 
-It still returns a `Task`. Compiler warns. Extra state machine for no reason.
+It still returns a `Task`. The compiler warns you, and you get an extra state machine for no reason.
 
-**Real-world example:** Someone wrote `async Task<User> GetUser() => _cache.User;` — async with no await. Change to `Task.FromResult` or return `User` sync.
+**Real-world example:** Someone wrote `async Task<User> GetUser() => _cache.User;` — async with no await. I'd change it to `Task.FromResult` or return `User` synchronously.
 
 **Cross-question:** `async void`?
 
-**Cross-answer:** Cannot `.Result`. Exceptions are nasty. Avoid.
+**Cross-answer:** You cannot call `.Result` on it, and exceptions are nasty. I avoid it.
 
 ---
 
@@ -160,11 +160,11 @@ Console.WriteLine(s);
 
 `s` now points at a **new** string. `"a"` is unchanged (immutable).
 
-**Real-world example:** Loop `s += line` for a report. Output is correct but slow. `StringBuilder` for the loop.
+**Real-world example:** Doing `s += line` in a loop for a report gives the right output but is slow. I use `StringBuilder` for the loop.
 
 **Cross-question:** Does `+=` mutate?
 
-**Cross-answer:** No. It replaces the variable.
+**Cross-answer:** No. It just points the variable at a new string.
 
 ---
 
@@ -181,7 +181,7 @@ Console.WriteLine(A.C + A.R);
 
 **Answer (output):** `2`
 
-**Real-world example:** Changing `const` in a DLL does not update other assemblies until they rebuild. `readonly` is runtime.
+**Real-world example:** Changing `const` in a DLL does not update other assemblies until they rebuild. `readonly` is read at runtime.
 
 **Cross-question:** Can `R` be 2 after static ctor?
 
@@ -204,9 +204,9 @@ y.P();
 
 **Answer (output):** `DB`
 
-`override` is polymorphic. `new` hides; the variable is `Base`, so `B`.
+`override` is polymorphic. `new` only hides the method, and the variable is `Base`, so it prints `B`.
 
-**Real-world example:** A “logging” child method with `new` never ran when the code held a `Base` reference. Use `override`.
+**Real-world example:** A “logging” child method marked `new` never ran when the code held a `Base` reference. Use `override`.
 
 **Cross-question:** `((E)y).P()`?
 
@@ -269,15 +269,15 @@ lock ("incident") { }
 
 **Answer:**
 
-It compiles. It is **dangerous**. Interned string is shared. Another library can lock the same string and deadlock.
+It compiles, but it is **dangerous**. An interned string is shared, so another library can lock the same string and deadlock.
 
-**Output:** no print; the trap is design.
+**Output:** nothing prints; the trap is the design.
 
-**Real-world example:** Two modules locked `"cache"` and froze the API. Private `readonly object _gate = new()`.
+**Real-world example:** Two modules locked `"cache"` and froze the API. The fix is a private `readonly object _gate = new()`.
 
 **Cross-question:** `lock (this)`?
 
-**Cross-answer:** Also bad. Outsiders can lock your instance.
+**Cross-answer:** Also bad. Code outside your class can lock your instance.
 
 ---
 
@@ -296,7 +296,7 @@ catch (ArrayTypeMismatchException) { Console.Write("fail"); }
 
 **Cross-question:** `List<string>` to `List<object>`?
 
-**Cross-answer:** Does not compile. Generics are safer here.
+**Cross-answer:** It does not compile. Generics are safer here.
 
 ---
 
@@ -351,12 +351,12 @@ Console.WriteLine(n);
 ```text
 0
 2
-2
+3
 5
-4
+6
 ```
 
-`Where` does not run until `Count` / `Sum`. Each enumeration runs the predicate again. `Count` sees 2 and 3. `Sum` is 5. `n` becomes 2 then 4.
+`Where` does not run until I call `Count` or `Sum`, and each of those runs the predicate again over all three items. `Count` keeps 2 and 3, so it prints 2, and `Sum` prints 5. Because `n++` runs before the filter check, it counts every item on every pass: `n` is 3 after `Count` and 6 after `Sum`.
 
 **Real-world example:**
 
@@ -383,7 +383,7 @@ Console.WriteLine(CreateOrder().Result);
 
 **Answer (output):** `42`
 
-It works, but you moved blocking work onto the thread pool. The method looks async. Under load those threads still get used.
+It works, but you only moved blocking work onto the thread pool. The method looks async. Under load those threads still get used.
 
 **Real-world example:**
 
@@ -393,7 +393,7 @@ It works, but you moved blocking work onto the thread pool. The method looks asy
 
 **Cross-answer:**
 
-Do not. `await CreateOrderAsync()` in the action. `.Result` can stall the thread pool.
+Don't. I `await CreateOrderAsync()` in the action. `.Result` can stall the thread pool.
 
 
 ---
